@@ -1,99 +1,89 @@
 #include <Arduino.h>
 #include <SPI.h>
-
-#include <Adafruit_Sensor.h>
-#include <Adafruit_TSL2561_U.h>
 #include <Wire.h>
 
-#include "Adafruit_ADS1X15.h"
-#include "DHT.h"
-#include "DHT_U.h"
+#include <Adafruit_ADS1X15.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_TSL2561_U.h>
+#include <DHT_U.h>
 
-// #define R1 1600
-// #define R2 200
+#define DHT_PIN 2
+#define DHT_TYPE DHT22
+#define TSL2561_SENSOR_ID 0x1
+#define ACS712_PIN A0
 
-uint16_t R1 = 1496;
-uint16_t R2 = 200;
+#define DELAY 3000
 
-#define DHT_pin 2
-#define DHT_type DHT22
-#define CurSens_pin A0
-#define lag 3000
+#define R1 1496.0f
+#define R2 200.0f
 
-uint32_t timer = 0;
+uint32_t start = 0;
 
-Adafruit_ADS1015 voltmetr;
-DHT_Unified thermometer(DHT_pin, DHT_type);
-Adafruit_TSL2561_Unified tsl =
-    Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, 12345);
+constexpr float voltageDivider = (R1 + R2) / R2;
 
-int16_t voltage_digit;
-float V_out;
-float V_in;
+// Voltmeter
+Adafruit_ADS1115 ads1115 = {};
 
-uint16_t current_digit;
-float current;
+// Digital Temperature and Humidity sensor
+DHT_Unified dht(DHT_PIN, DHT_TYPE);
 
-float temperature;
-float humidity;
-float light;
+// Luminosity sensor
+Adafruit_TSL2561_Unified tsl2561 =
+    Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, TSL2561_SENSOR_ID);
 
 void setup() {
     Serial.begin(9600);
 
-    if (!voltmetr.begin()) {
-        Serial.println("ADS1115 don't init");
+    if (!ads1115.begin()) {
+        Serial.println("Error: Failed to initialize ADS1115");
         while (1) {
         }
     }
 
-    if (!tsl.begin()) {
-        Serial.print("TCL2561 don't init");
+    if (!tsl2561.begin()) {
+        Serial.println("Error: Failed to initialize TSL2561");
         while (1) {
         }
     }
 
-    thermometer.begin();
+    dht.begin();
 }
 
 void loop() {
-    if (millis() - timer >= lag) {
-        timer = millis();
+    if (millis() - start >= DELAY) {
+        start = millis();
 
-        sensors_event_t eventTherm;
-        sensors_event_t eventLight;
+        sensors_event_t e;
 
-        thermometer.temperature().getEvent(&eventTherm);
-        temperature = eventTherm.temperature;
+        dht.temperature().getEvent(&e);
+        float T = e.temperature;
 
-        thermometer.humidity().getEvent(&eventTherm);
-        humidity = eventTherm.relative_humidity;
+        dht.humidity().getEvent(&e);
+        float H = e.relative_humidity;
 
-        tsl.getEvent(&eventLight);
-        light = eventLight.light;
+        tsl2561.getEvent(&e);
+        float L = e.light;
 
-        voltage_digit = voltmetr.readADC_SingleEnded(0);
-        V_out = (float(voltage_digit) * 3.0F) / 1000;
-        V_in = (float(R1 + R2) / R2) * V_out;
+        float A = (float(analogRead(ACS712_PIN)) * 0.026f) - 0.02f;
 
-        current_digit = analogRead(CurSens_pin);
-        current = float(voltage_digit) * 0.0195;
+        float Vo = (float)ads1115.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+        float V = voltageDivider * Vo;
 
-        Serial.println("");
-        Serial.print("Temperature: ");
-        Serial.print(temperature);
-        Serial.println("°C");
-        Serial.print("Humidity: ");
-        Serial.print(humidity);
-        Serial.println(" g/m³");
         Serial.print("Voltage: ");
-        Serial.print(V_in);
+        Serial.print(V);
         Serial.println(" V");
         Serial.print("Current: ");
-        Serial.print(current);
+        Serial.print(A);
         Serial.println(" A");
+        Serial.println("");
+        Serial.print("Temperature: ");
+        Serial.print(T);
+        Serial.println("°C");
+        Serial.print("Humidity: ");
+        Serial.print(H);
+        Serial.println(" g/m³");
         Serial.print("Light: ");
-        Serial.print(light);
+        Serial.print(L);
         Serial.println(" lux");
         Serial.println("");
     }
