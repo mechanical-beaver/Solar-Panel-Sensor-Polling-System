@@ -7,6 +7,8 @@
 #include <Adafruit_TSL2561_U.h>
 #include <DHT_U.h>
 
+#include <Ethernet.h>
+
 #define DHT_PIN 2
 #define DHT_TYPE DHT22
 #define TSL2561_SENSOR_ID 0x1
