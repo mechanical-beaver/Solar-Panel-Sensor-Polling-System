@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
+#include <Wire.h>
 
 #include "Adafruit_ADS1X15.h"
 #include "DHT.h"
@@ -24,7 +24,8 @@ uint32_t timer = 0;
 
 Adafruit_ADS1015 voltmetr;
 DHT_Unified thermometer(DHT_pin, DHT_type);
-Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, 12345);
+Adafruit_TSL2561_Unified tsl =
+    Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, 12345);
 
 int16_t voltage_digit;
 float V_out;
@@ -37,57 +38,63 @@ float temperature;
 float humidity;
 float light;
 
+void setup() {
+    Serial.begin(9600);
 
-void setup()
-{
-  Serial.begin(9600);
+    if (!voltmetr.begin()) {
+        Serial.println("ADS1115 don't init");
+        while (1) {
+        }
+    }
 
-  if(!voltmetr.begin())
-  {
-    Serial.println("ADS1115 don't init");
-    while (1){}
-  } 
+    if (!tsl.begin()) {
+        Serial.print("TCL2561 don't init");
+        while (1) {
+        }
+    }
 
-  if(!tsl.begin())
-  {
-    Serial.print("TCL2561 don't init");
-    while(1){}
-  }
-
-  thermometer.begin();
+    thermometer.begin();
 }
 
-void loop()
-{
-  if (millis() - timer >= lag)
-  {
-    timer = millis();
+void loop() {
+    if (millis() - timer >= lag) {
+        timer = millis();
 
-    sensors_event_t eventTherm;
-    sensors_event_t eventLight;
+        sensors_event_t eventTherm;
+        sensors_event_t eventLight;
 
-    thermometer.temperature().getEvent(&eventTherm);
-    temperature = eventTherm.temperature;
+        thermometer.temperature().getEvent(&eventTherm);
+        temperature = eventTherm.temperature;
 
-    thermometer.humidity().getEvent(&eventTherm);
-    humidity = eventTherm.relative_humidity;
+        thermometer.humidity().getEvent(&eventTherm);
+        humidity = eventTherm.relative_humidity;
 
-    tsl.getEvent(&eventLight);
-    light = eventLight.light;
+        tsl.getEvent(&eventLight);
+        light = eventLight.light;
 
-    voltage_digit = voltmetr.readADC_SingleEnded(0);
-    V_out = (float(voltage_digit) * 3.0F)/1000;
-    V_in = (float(R1 + R2)/R2)*V_out;
+        voltage_digit = voltmetr.readADC_SingleEnded(0);
+        V_out = (float(voltage_digit) * 3.0F) / 1000;
+        V_in = (float(R1 + R2) / R2) * V_out;
 
-    current_digit = analogRead(CurSens_pin);
-    current = float(voltage_digit) * 0.0195;
+        current_digit = analogRead(CurSens_pin);
+        current = float(voltage_digit) * 0.0195;
 
-    Serial.println("");
-    Serial.print("Temperature: "); Serial.print(temperature); Serial.println("°C");
-    Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" g/m³");
-    Serial.print("Voltage: "); Serial.print(V_in); Serial.println(" V");
-    Serial.print("Current: "); Serial.print(current); Serial.println(" A");
-    Serial.print("Light: "); Serial.print(light); Serial.println(" lux");
-    Serial.println("");
-  }
+        Serial.println("");
+        Serial.print("Temperature: ");
+        Serial.print(temperature);
+        Serial.println("°C");
+        Serial.print("Humidity: ");
+        Serial.print(humidity);
+        Serial.println(" g/m³");
+        Serial.print("Voltage: ");
+        Serial.print(V_in);
+        Serial.println(" V");
+        Serial.print("Current: ");
+        Serial.print(current);
+        Serial.println(" A");
+        Serial.print("Light: ");
+        Serial.print(light);
+        Serial.println(" lux");
+        Serial.println("");
+    }
 }
