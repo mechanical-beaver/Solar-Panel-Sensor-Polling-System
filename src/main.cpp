@@ -19,6 +19,12 @@
 #define R1 1496.0f
 #define R2 200.0f
 
+struct meas {
+    float T, H, L, A, V;
+};
+
+meas getMeas();
+
 uint32_t start = 0;
 
 constexpr float voltageDivider = (R1 + R2) / R2;
@@ -54,39 +60,43 @@ void setup() {
 void loop() {
     if (millis() - start >= DELAY) {
         start = millis();
-
-        sensors_event_t e;
-
-        dht.temperature().getEvent(&e);
-        float T = e.temperature;
-
-        dht.humidity().getEvent(&e);
-        float H = e.relative_humidity;
-
-        tsl2561.getEvent(&e);
-        float L = e.light;
-
-        float A = (float(analogRead(ACS712_PIN)) * 0.026f) - 0.02f;
-
-        float Vo = (float)ads1115.readADC_SingleEnded(0) * 3.0f / 1000.0f;
-        float V = voltageDivider * Vo;
-
+        meas M = getMeas();
         Serial.print("Voltage: ");
-        Serial.print(V);
+        Serial.print(M.V);
         Serial.println(" V");
         Serial.print("Current: ");
-        Serial.print(A);
+        Serial.print(M.A);
         Serial.println(" A");
         Serial.println("");
         Serial.print("Temperature: ");
-        Serial.print(T);
+        Serial.print(M.T);
         Serial.println("°C");
         Serial.print("Humidity: ");
-        Serial.print(H);
-        Serial.println(" g/m³");
+        Serial.print(M.H);
+        Serial.println(" %");
         Serial.print("Light: ");
-        Serial.print(L);
+        Serial.print(M.L);
         Serial.println(" lux");
         Serial.println("");
     }
+}
+
+meas getMeas() {
+    sensors_event_t e;
+
+    dht.temperature().getEvent(&e);
+    float T = e.temperature;
+
+    dht.humidity().getEvent(&e);
+    float H = e.relative_humidity;
+
+    tsl2561.getEvent(&e);
+    float L = e.light;
+
+    float A = (float(analogRead(ACS712_PIN)) * 0.026f) - 0.02f;
+
+    float Vo = (float)ads1115.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+    float V = voltageDivider * Vo;
+
+    return {T, H, L, A, V};
 }
