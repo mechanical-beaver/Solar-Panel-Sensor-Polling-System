@@ -1,31 +1,34 @@
-#include "HardwareSerial.h"
 #include <Arduino.h>
+#include <HardwareSerial.h>
 #include <SPI.h>
+#include <WString.h>
 #include <Wire.h>
+
+#include <Ethernet.h>
+#include <MQTT.h>
+#include <SD.h>
 
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
+#include <ArduinoJson.h>
 #include <DHT_U.h>
 
-#include <Ethernet.h>
-#include <MQTT.h>
+#define CONFIG_FILENAME   ("CONFIG.TXT")
+#define DHT_PIN           (0x2)
+#define SD_PIN            (0x4)
+#define DHT_TYPE          (DHT22)
+#define TSL2561_SENSOR_ID (0x1)
+#define ACS712_PIN        (A0)
 
-#define DHT_PIN 2
-#define DHT_TYPE DHT22
-#define TSL2561_SENSOR_ID 0x1
-#define ACS712_PIN A0
+#define DELAY             3000
 
-#define DELAY 3000
-
-#define R1 1496.0f
-#define R2 200.0f
+#define R1                1496.0f
+#define R2                200.0f
 
 struct meas {
     float T, H, L, A, V;
 };
-
-meas getMeas();
 
 uint32_t start = 0;
 
@@ -41,33 +44,47 @@ DHT_Unified dht(DHT_PIN, DHT_TYPE);
 Adafruit_TSL2561_Unified tsl2561 =
     Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, TSL2561_SENSOR_ID);
 
-EthernetClient net = {};
-MQTTClient client;
-
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = {0x00, 0xb0, 0x5a, 0x85, 0x6b, 0x00};
 
-bool connect() {
-    return client.connect("arduino-frieren-solar", "public", "public");
-}
+// Networking
+EthernetClient net = {};
+MQTTClient client;
+
+JsonDocument getConfig();
+inline bool connect() { return client.connect("", "arduino", "arduino"); }
+meas getMeas();
+void dhcpLoop();
 
 void setup() {
     Serial.begin(9600);
+
+    // TODO: Check this later
 
     /*while (!Serial) {*/
     /*    delay(1);*/
     /*}*/
 
+    if (SD.begin(SD_PIN)) {
+        Serial.println(F("ERR: SD card initialization failed!"));
+        while (1) {
+            delay(1);
+        }
+    }
+
+    JsonDocument config = getConfig();
+
     /*if (!ads1115.begin()) {*/
-    /*    Serial.println("Error: Failed to initialize ADS1115");*/
+    /*    Serial.println(F("ERR: Failed to initialize ADS1115"));*/
     /*    while (1) {*/
     /*        delay(1);*/
     /*    }*/
     /*}*/
     /**/
+
     /*if (!tsl2561.begin()) {*/
-    /*    Serial.println("Error: Failed to initialize TSL2561");*/
+    /*    Serial.println(F("ERR: Failed to initialize TSL2561"));*/
     /*    while (1) {*/
     /*        delay(1);*/
     /*    }*/
@@ -75,13 +92,13 @@ void setup() {
 
     /*dht.begin();*/
 
-    Serial.println("Initialize Ethernet with DHCP");
-    if (Ethernet.begin(mac) == 0) {
-        Serial.println("Failed to configure Ethernet using DHCP");
+    Serial.println(F("ERR: Initialize Ethernet with DHCP"));
+    if (!Ethernet.begin(mac, 10, 10)) {
+        Serial.println(F("ERR: Failed to configure Ethernet using DHCP"));
         if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-            Serial.println("Ethernet shield was not found.");
+            Serial.println(F("ERR: Ethernet shield was not found."));
         } else if (Ethernet.linkStatus() == LinkOFF) {
-            Serial.println("Ethernet cable is not connected.");
+            Serial.println(F("ERR: Ethernet cable is not connected."));
         }
 
         // no point in carrying on, so do nothing forevermore:
@@ -91,81 +108,86 @@ void setup() {
     }
 
     // print your local IP address:
-    Serial.print("My IP address: ");
+    Serial.print(F("INF: My IP address: "));
     Serial.println(Ethernet.localIP());
 
-    Serial.print("MQTT: connecting");
-    client.begin("public.cloud.shift.io", net);
-    while (!client.connect("arduino-frieren-solar", "public", "public")) {
-        Serial.print(".");
+    Serial.print(F("INF: MQTT connecting"));
+    client.begin("192.168.1.85", net);
+    while (!connect()) {
+        Serial.print(F("."));
         delay(1000);
     }
 }
 
 void loop() {
     if (millis() - start >= DELAY) {
-
-        return;
         client.loop();
         if (!client.connected()) {
-            Serial.print("MQTT: connecting");
+            Serial.print(F("INF: MQTT connecting"));
             while (!connect()) {
-                Serial.print(".");
+                Serial.print(F("."));
                 delay(1000);
             }
         }
+
         /*start = millis();*/
         /*meas M = getMeas();*/
-        /*Serial.print("Voltage: ");*/
+        /*Serial.print(F("Voltage: "));*/
         /*Serial.print(M.V);*/
-        /*Serial.println(" V");*/
-        /*Serial.print("Current: ");*/
+        /*Serial.println(F(" V"));*/
+        /*Serial.print(F("Current: "));*/
         /*Serial.print(M.A);*/
-        /*Serial.println(" A");*/
-        /*Serial.println("");*/
-        /*Serial.print("Temperature: ");*/
+        /*Serial.println(F(" A"));*/
+        /*Serial.println(F(""));*/
+        /*Serial.print(F("Temperature: "));*/
         /*Serial.print(M.T);*/
-        /*Serial.println("°C");*/
-        /*Serial.print("Humidity: ");*/
+        /*Serial.println(F("°C"));*/
+        /*Serial.print(F("Humidity: "));*/
         /*Serial.print(M.H);*/
-        /*Serial.println(" %");*/
-        /*Serial.print("Light: ");*/
+        /*Serial.println(F(" %"));*/
+        /*Serial.print(F("Light: "));*/
         /*Serial.print(M.L);*/
-        /*Serial.println(" lux");*/
-        /*Serial.println("");*/
+        /*Serial.println(F(" lux"));*/
+        /*Serial.println(F(""));*/
+
+        dhcpLoop();
+    }
+}
+
+JsonDocument getConfig() {
+    Serial.println(F("INF: Reading config file..."));
+    if (!SD.exists(CONFIG_FILENAME)) {
+        Serial.println(F("ERR: Can't find config file"));
+        while (1) {
+            delay(1);
+        }
     }
 
-    switch (Ethernet.maintain()) {
-    case 1:
-        // renewed fail
-        Serial.println("Error: renewed fail");
-        break;
-
-    case 2:
-        // renewed success
-        Serial.println("Renewed success");
-        // print your local IP address:
-        Serial.print("My IP address: ");
-        Serial.println(Ethernet.localIP());
-        break;
-
-    case 3:
-        // rebind fail
-        Serial.println("Error: rebind fail");
-        break;
-
-    case 4:
-        // rebind success
-        Serial.println("Rebind success");
-        // print your local IP address:
-        Serial.print("My IP address: ");
-        Serial.println(Ethernet.localIP());
-        break;
-
-    default:
-        // nothing happened
-        break;
+    File cfg = SD.open(CONFIG_FILENAME);
+    size_t sz = (size_t)cfg.size();
+    char *content = (char *)malloc(sz + 1);
+    if (!content) {
+        Serial.println(F("ERR: Failed to allocate memory"));
+        while (1) {
+            delay(1);
+        }
     }
+
+    content[sz] = '\0';
+
+    JsonDocument config;
+    DeserializationError err = deserializeJson(config, content);
+    if (err) {
+        Serial.print(F("ERR: Deserialization failed, "));
+        Serial.println(err.f_str());
+        while (1) {
+            delay(1);
+        }
+    }
+
+    free(content);
+
+    return config;
 }
 
 meas getMeas() {
@@ -186,4 +208,38 @@ meas getMeas() {
     float V = voltageDivider * Vo;
 
     return {T, H, L, A, V};
+}
+
+void dhcpLoop() {
+    switch (Ethernet.maintain()) {
+    case 1:
+        // renewed fail
+        Serial.println(F("ERR: renewed fail"));
+        break;
+
+    case 2:
+        // renewed success
+        Serial.println(F("INF: Renewed success"));
+        // print your local IP address:
+        Serial.print(F("INF: My IP address "));
+        Serial.println(Ethernet.localIP());
+        break;
+
+    case 3:
+        // rebind fail
+        Serial.println(F("ERR: rebind fail"));
+        break;
+
+    case 4:
+        // rebind success
+        Serial.println(F("INF: Rebind success"));
+        // print your local IP address:
+        Serial.print(F("INF: My IP address "));
+        Serial.println(Ethernet.localIP());
+        break;
+
+    default:
+        // nothing happened
+        break;
+    }
 }
