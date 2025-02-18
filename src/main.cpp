@@ -16,7 +16,7 @@
 
 #define CONFIG_FILENAME   ("CONFIG.TXT")
 #define DHT_PIN           (0x2)
-#define SD_PIN            (0x4)
+#define SD_PIN            (4)
 #define DHT_TYPE          (DHT22)
 #define TSL2561_SENSOR_ID (0x1)
 #define ACS712_PIN        (A0)
@@ -66,7 +66,7 @@ void setup() {
     /*    delay(1);*/
     /*}*/
 
-    if (SD.begin(SD_PIN)) {
+    if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
         while (1) {
             delay(1);
@@ -92,8 +92,8 @@ void setup() {
 
     /*dht.begin();*/
 
-    Serial.println(F("ERR: Initialize Ethernet with DHCP"));
-    if (!Ethernet.begin(mac, 10, 10)) {
+    Serial.println(F("INF: Initialize Ethernet with DHCP"));
+    if (!Ethernet.begin(mac, 5000, 5000)) {
         Serial.println(F("ERR: Failed to configure Ethernet using DHCP"));
         if (Ethernet.hardwareStatus() == EthernetNoHardware) {
             Serial.println(F("ERR: Ethernet shield was not found."));
@@ -108,11 +108,12 @@ void setup() {
     }
 
     // print your local IP address:
-    Serial.print(F("INF: My IP address: "));
+    const char *mqtthost = config["mqtt_host"];
+    Serial.print(F("INF: My IP address "));
     Serial.println(Ethernet.localIP());
-
-    Serial.print(F("INF: MQTT connecting"));
-    client.begin("192.168.1.85", net);
+    Serial.print(F("INF: MQTT connecting "));
+    Serial.println(mqtthost);
+    client.begin(mqtthost, net);
     while (!connect()) {
         Serial.print(F("."));
         delay(1000);
@@ -120,35 +121,51 @@ void setup() {
 }
 
 void loop() {
+    char buffer[1024]; // TODO: allocate with malloc()
+
+    client.loop();
+
+    if (!client.connected()) {
+        connect();
+    }
+
     if (millis() - start >= DELAY) {
-        client.loop();
-        if (!client.connected()) {
-            Serial.print(F("INF: MQTT connecting"));
-            while (!connect()) {
-                Serial.print(F("."));
-                delay(1000);
-            }
+
+        start = millis();
+
+        // meas M = getMeas();
+        meas M{(float)random(), (float)random(), (float)random(),
+               (float)random(), (float)random()};
+
+        JsonDocument payload;
+        payload["tem"] = M.T;
+        payload["hum"] = M.H;
+        payload["lux"] = M.L;
+        payload["vol"] = M.V;
+        payload["cur"] = M.A;
+
+        size_t sz = serializeJson(payload, buffer);
+
+        if (sz) {
+            client.publish("uni/sp", buffer);
         }
 
-        /*start = millis();*/
-        /*meas M = getMeas();*/
-        /*Serial.print(F("Voltage: "));*/
-        /*Serial.print(M.V);*/
-        /*Serial.println(F(" V"));*/
-        /*Serial.print(F("Current: "));*/
-        /*Serial.print(M.A);*/
-        /*Serial.println(F(" A"));*/
-        /*Serial.println(F(""));*/
-        /*Serial.print(F("Temperature: "));*/
-        /*Serial.print(M.T);*/
-        /*Serial.println(F("°C"));*/
-        /*Serial.print(F("Humidity: "));*/
-        /*Serial.print(M.H);*/
-        /*Serial.println(F(" %"));*/
-        /*Serial.print(F("Light: "));*/
-        /*Serial.print(M.L);*/
-        /*Serial.println(F(" lux"));*/
-        /*Serial.println(F(""));*/
+        Serial.print(F("Voltage: "));
+        Serial.print(M.V);
+        Serial.println(F(" V"));
+        Serial.print(F("Current: "));
+        Serial.print(M.A);
+        Serial.println(F(" A"));
+        Serial.print(F("Temperature: "));
+        Serial.print(M.T);
+        Serial.println(F("°C"));
+        Serial.print(F("Humidity: "));
+        Serial.print(M.H);
+        Serial.println(F(" %"));
+        Serial.print(F("Light: "));
+        Serial.print(M.L);
+        Serial.println(F(" lux"));
+        Serial.println();
 
         dhcpLoop();
     }
@@ -175,7 +192,15 @@ JsonDocument getConfig() {
 
     content[sz] = '\0';
 
+    if (cfg.read(content, sz) == -1) {
+        Serial.println(F("ERR: Failed to read config file."));
+        while (1) {
+            delay(1);
+        }
+    }
+
     JsonDocument config;
+    Serial.println(content);
     DeserializationError err = deserializeJson(config, content);
     if (err) {
         Serial.print(F("ERR: Deserialization failed, "));
