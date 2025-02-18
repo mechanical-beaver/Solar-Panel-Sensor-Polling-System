@@ -1,0 +1,148 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.9 Chrome/128.0.6613.186 Electron/32.2.5 Safari/537.36" version="26.0.9">
+  <diagram name="Page-1" id="Fk5OsDmDStnIcG2XZBvM">
+    <mxGraphModel dx="2206" dy="1298" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-1" value="&lt;h1&gt;&lt;font face=&quot;Courier New&quot;&gt;Алгоритм обнаружения ошибок солнечной панели&lt;/font&gt;&lt;/h1&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="95" y="25" width="660" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-5" target="Hn3cXpljA0RWg10RIBS2-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-5" value="&lt;font&gt;НАЧАЛО&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="130" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-6" target="Hn3cXpljA0RWg10RIBS2-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-6" target="Hn3cXpljA0RWg10RIBS2-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-6" value="&lt;span&gt;Напряжение меньше рассчетного?&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="320" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-9" target="Hn3cXpljA0RWg10RIBS2-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-9" value="&lt;div&gt;&lt;font&gt;Ошибка:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font&gt;Отказ одной или более солнечных ячеек.&lt;/font&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="1940" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-11" target="Hn3cXpljA0RWg10RIBS2-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-11" target="Hn3cXpljA0RWg10RIBS2-38">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-11" value="&lt;div&gt;&lt;font&gt;Напряжение&lt;br&gt;&lt;/font&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;равно/близко&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;font&gt;к нулю?&lt;/font&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="600" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-17" target="Hn3cXpljA0RWg10RIBS2-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-17" value="&lt;div&gt;&lt;span&gt;Рассчитать ВАХ солнечной панели.&lt;/span&gt;&lt;/div&gt;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="890" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-21" target="Hn3cXpljA0RWg10RIBS2-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-45" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-21" target="Hn3cXpljA0RWg10RIBS2-44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-21" value="&lt;div&gt;&lt;font&gt;Все точки ВАХ уменьшены &lt;br&gt;на константу&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;?&lt;/span&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="1100" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-23" target="Hn3cXpljA0RWg10RIBS2-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-49" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-23" target="Hn3cXpljA0RWg10RIBS2-48">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-23" value="&lt;span&gt;Форма ВАХ имеет ступенчатый вид?&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="1370" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-25" target="Hn3cXpljA0RWg10RIBS2-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-55" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-25" target="Hn3cXpljA0RWg10RIBS2-54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-25" value="&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Значения ВАХ меньше рассчетных?&lt;/span&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="1650" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-28" value="КОНЕЦ" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="325" y="2250" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-32" value="&lt;font&gt;КОНЕЦ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="630" y="370" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-34" value="&lt;font&gt;НЕТ&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="555" y="378" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-35" value="&lt;font&gt;ДА&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="360" y="550" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-59" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-38" target="Hn3cXpljA0RWg10RIBS2-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-38" value="&lt;div&gt;&lt;font&gt;Ошибка:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;Солнечная панель отключена.&lt;/span&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="630" y="600" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-40" value="&lt;font&gt;ДА&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="560" y="660" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-43" value="&lt;font&gt;НЕТ&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="355" y="830" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-47" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-44" target="Hn3cXpljA0RWg10RIBS2-46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-44" value="&lt;div&gt;&lt;font&gt;Ошибка:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;Равномерное затенение солнечной панели.&lt;/span&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="630" y="1100" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-46" value="&lt;font&gt;КОНЕЦ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1150" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-51" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-48" target="Hn3cXpljA0RWg10RIBS2-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-48" value="&lt;div&gt;&lt;font&gt;Ошибка:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;Неизвестная ошибка.&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="630" y="1370" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-50" value="&lt;font&gt;КОНЕЦ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1420" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-57" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=16;fontFamily=Courier New;" edge="1" parent="1" source="Hn3cXpljA0RWg10RIBS2-54" target="Hn3cXpljA0RWg10RIBS2-56">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-54" value="&lt;div&gt;&lt;font&gt;Ошибка:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;Частичное затенение солнечной панели.&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="630" y="1650" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-56" value="&lt;font&gt;КОНЕЦ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1700" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-58" value="&lt;font&gt;КОНЕЦ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="940" y="650" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-62" value="&lt;font&gt;ДА&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1150" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-63" value="&lt;font&gt;НЕТ&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="355" y="1320" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-64" value="&lt;font&gt;ДА&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1420" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-65" value="&lt;font&gt;НЕТ&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="355" y="1600" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-67" value="&lt;font&gt;ДА&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1690" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hn3cXpljA0RWg10RIBS2-68" value="&lt;font&gt;НЕТ&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="355" y="1880" width="50" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
