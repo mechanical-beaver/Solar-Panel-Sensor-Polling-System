@@ -13,6 +13,7 @@
 #include <Adafruit_TSL2561_U.h>
 #include <ArduinoJson.h>
 #include <DHT_U.h>
+#include <cstdint>
 
 #define CONFIG_FILENAME   ("CONFIG.TXT")
 #define DHT_PIN           (0x2)
@@ -48,12 +49,20 @@ Adafruit_TSL2561_Unified tsl2561 =
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = {0x00, 0xb0, 0x5a, 0x85, 0x6b, 0x00};
 
+JsonDocument config;
+
 // Networking
 EthernetClient net = {};
 MQTTClient client;
 
-JsonDocument getConfig();
-inline bool connect() { return client.connect("", "arduino", "arduino"); }
+void getConfig();
+
+inline bool mqttconn() {
+    const char *username = config["mqtt_username"];
+    const char *password = config["mqtt_password"];
+    return client.connect("", username, password);
+}
+
 meas getMeas();
 void dhcpLoop();
 
@@ -73,7 +82,37 @@ void setup() {
         }
     }
 
-    JsonDocument config = getConfig();
+    getConfig();
+
+    Serial.println("INF: Check `mqtt_host`");
+    while (!config["mqtt_host"].is<const char *>()) {
+        Serial.println("ERR: `mqtt_host` not found");
+    }
+
+    Serial.println("INF: Check `mqtt_username`");
+    while (!config["mqtt_username"].is<const char *>()) {
+        Serial.println("ERR: `mqtt_username` not found");
+    }
+
+    Serial.println("INF: Check `mqtt_password`");
+    while (!config["mqtt_password"].is<const char *>()) {
+        Serial.println("ERR: `mqtt_password` not found");
+    }
+
+    Serial.println("INF: Check `mqtt_topic`");
+    while (!config["mqtt_topic"].is<const char *>()) {
+        Serial.println("ERR: `mqtt_topic` not found");
+    }
+
+    Serial.println("INF: Check `eth_timeout`");
+    while (!config["eth_timeout"].is<uint32_t>()) {
+        Serial.println("ERR: `eth_timeout` not found");
+    }
+
+    Serial.println("INF: Check `eth_response_timeout`");
+    while (!config["eth_response_timeout"].is<uint32_t>()) {
+        Serial.println("ERR: `eth_response_timeout` not found");
+    }
 
     /*if (!ads1115.begin()) {*/
     /*    Serial.println(F("ERR: Failed to initialize ADS1115"));*/
@@ -93,7 +132,8 @@ void setup() {
     /*dht.begin();*/
 
     Serial.println(F("INF: Initialize Ethernet with DHCP"));
-    if (!Ethernet.begin(mac, 5000, 5000)) {
+    if (!Ethernet.begin(mac, config["eth_timeout"].as<uint32_t>(),
+                        config["eth_response_timeout"].as<uint32_t>())) {
         Serial.println(F("ERR: Failed to configure Ethernet using DHCP"));
         if (Ethernet.hardwareStatus() == EthernetNoHardware) {
             Serial.println(F("ERR: Ethernet shield was not found."));
@@ -114,7 +154,7 @@ void setup() {
     Serial.print(F("INF: MQTT connecting "));
     Serial.println(mqtthost);
     client.begin(mqtthost, net);
-    while (!connect()) {
+    while (!mqttconn()) {
         Serial.print(F("."));
         delay(1000);
     }
@@ -126,7 +166,11 @@ void loop() {
     client.loop();
 
     if (!client.connected()) {
-        connect();
+        Serial.println("INF: MQTT reconnecting");
+        while (!mqttconn()) {
+            Serial.print(F("."));
+            delay(1000);
+        }
     }
 
     if (millis() - start >= DELAY) {
@@ -147,7 +191,8 @@ void loop() {
         size_t sz = serializeJson(payload, buffer);
 
         if (sz) {
-            client.publish("uni/sp", buffer);
+            const char *topic = config["topic"];
+            client.publish(topic, buffer);
         }
 
         Serial.print(F("Voltage: "));
@@ -171,7 +216,7 @@ void loop() {
     }
 }
 
-JsonDocument getConfig() {
+void getConfig() {
     Serial.println(F("INF: Reading config file..."));
     if (!SD.exists(CONFIG_FILENAME)) {
         Serial.println(F("ERR: Can't find config file"));
@@ -199,7 +244,6 @@ JsonDocument getConfig() {
         }
     }
 
-    JsonDocument config;
     Serial.println(content);
     DeserializationError err = deserializeJson(config, content);
     if (err) {
@@ -211,8 +255,6 @@ JsonDocument getConfig() {
     }
 
     free(content);
-
-    return config;
 }
 
 meas getMeas() {
