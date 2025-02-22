@@ -1,4 +1,8 @@
+#include <stdint.h>
+#include <stdlib.h>
+
 #include <Arduino.h>
+#include <Dhcp.h>
 #include <HardwareSerial.h>
 #include <SPI.h>
 #include <WString.h>
@@ -13,7 +17,6 @@
 #include <Adafruit_TSL2561_U.h>
 #include <ArduinoJson.h>
 #include <DHT_U.h>
-#include <cstdint>
 
 #define CONFIG_FILENAME   ("CONFIG.TXT")
 #define DHT_PIN           (0x2)
@@ -21,8 +24,6 @@
 #define DHT_TYPE          (DHT22)
 #define TSL2561_SENSOR_ID (0x1)
 #define ACS712_PIN        (A0)
-
-#define DELAY             3000
 
 #define R1                1496.0f
 #define R2                200.0f
@@ -32,11 +33,13 @@ struct meas {
 };
 
 uint32_t start = 0;
+uint32_t dt = 0;
+char *mqttbuf;
 
 constexpr float voltageDivider = (R1 + R2) / R2;
 
 // Voltmeter
-Adafruit_ADS1115 ads1115 = {};
+Adafruit_ADS1015 ads1015;
 
 // Digital Temperature and Humidity sensor
 DHT_Unified dht(DHT_PIN, DHT_TYPE);
@@ -69,12 +72,6 @@ void dhcpLoop();
 void setup() {
     Serial.begin(9600);
 
-    // TODO: Check this later
-
-    /*while (!Serial) {*/
-    /*    delay(1);*/
-    /*}*/
-
     if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
         while (1) {
@@ -87,53 +84,85 @@ void setup() {
     Serial.println("INF: Check `mqtt_host`");
     while (!config["mqtt_host"].is<const char *>()) {
         Serial.println("ERR: `mqtt_host` not found");
+        delay(5000);
     }
 
     Serial.println("INF: Check `mqtt_username`");
     while (!config["mqtt_username"].is<const char *>()) {
         Serial.println("ERR: `mqtt_username` not found");
+        delay(5000);
     }
 
     Serial.println("INF: Check `mqtt_password`");
     while (!config["mqtt_password"].is<const char *>()) {
         Serial.println("ERR: `mqtt_password` not found");
+        delay(5000);
     }
 
     Serial.println("INF: Check `mqtt_topic`");
     while (!config["mqtt_topic"].is<const char *>()) {
         Serial.println("ERR: `mqtt_topic` not found");
+        delay(5000);
     }
 
-    Serial.println("INF: Check `eth_timeout`");
-    while (!config["eth_timeout"].is<uint32_t>()) {
-        Serial.println("ERR: `eth_timeout` not found");
+    Serial.println("INF: Check `mqtt_buffer_size`");
+    while (!config["mqtt_buffer_size"].is<uint32_t>()) {
+        Serial.println("ERR: `mqtt_buffer_size` not found");
+        delay(5000);
     }
 
-    Serial.println("INF: Check `eth_response_timeout`");
-    while (!config["eth_response_timeout"].is<uint32_t>()) {
-        Serial.println("ERR: `eth_response_timeout` not found");
+    Serial.println("INF: Check `dhcp_timeout`");
+    while (!config["dhcp_timeout"].is<uint32_t>()) {
+        Serial.println("ERR: `dhcp_timeout` not found");
+        delay(5000);
     }
 
-    /*if (!ads1115.begin()) {*/
-    /*    Serial.println(F("ERR: Failed to initialize ADS1115"));*/
-    /*    while (1) {*/
-    /*        delay(1);*/
-    /*    }*/
-    /*}*/
-    /**/
+    Serial.println("INF: Check `dhcp_response_timeout`");
+    while (!config["dhcp_response_timeout"].is<uint32_t>()) {
+        Serial.println("ERR: `dhcp_response_timeout` not found");
+        delay(5000);
+    }
 
-    /*if (!tsl2561.begin()) {*/
-    /*    Serial.println(F("ERR: Failed to initialize TSL2561"));*/
-    /*    while (1) {*/
-    /*        delay(1);*/
-    /*    }*/
-    /*}*/
+    Serial.println("INF: Check `delta_time`");
+    while (!config["delta_time"].is<uint32_t>()) {
+        Serial.println("ERR: `delta_time` not found");
+        delay(5000);
+    }
 
-    /*dht.begin();*/
+    Serial.println("INF: Check `sp_number`");
+    while (!config["sp_number"].is<uint32_t>()) {
+        Serial.println("ERR: `sp_number` not found");
+        delay(5000);
+    }
+
+    dt = config["delta_time"];
+
+    Serial.println("INF: Allocate MQTT buffer");
+    mqttbuf = (char *)malloc(config["mqtt_buffer_size"].as<size_t>());
+    while (!mqttbuf) {
+        Serial.println("ERR: Failed to allocate MQTT buffer");
+        delay(5000);
+    }
+
+    if (!ads1015.begin()) {
+        Serial.println(F("ERR: Failed to initialize ADS1115"));
+        while (1) {
+            delay(1);
+        }
+    }
+
+    if (!tsl2561.begin()) {
+        Serial.println(F("ERR: Failed to initialize TSL2561"));
+        while (1) {
+            delay(1);
+        }
+    }
+
+    dht.begin();
 
     Serial.println(F("INF: Initialize Ethernet with DHCP"));
-    if (!Ethernet.begin(mac, config["eth_timeout"].as<uint32_t>(),
-                        config["eth_response_timeout"].as<uint32_t>())) {
+    if (!Ethernet.begin(mac, config["dhcp_timeout"].as<uint32_t>(),
+                        config["dhcp_response_timeout"].as<uint32_t>())) {
         Serial.println(F("ERR: Failed to configure Ethernet using DHCP"));
         if (Ethernet.hardwareStatus() == EthernetNoHardware) {
             Serial.println(F("ERR: Ethernet shield was not found."));
@@ -143,7 +172,7 @@ void setup() {
 
         // no point in carrying on, so do nothing forevermore:
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
@@ -161,8 +190,6 @@ void setup() {
 }
 
 void loop() {
-    char buffer[1024]; // TODO: allocate with malloc()
-
     client.loop();
 
     if (!client.connected()) {
@@ -173,44 +200,27 @@ void loop() {
         }
     }
 
-    if (millis() - start >= DELAY) {
+    if (millis() - start >= dt) {
 
         start = millis();
 
-        // meas M = getMeas();
-        meas M{(float)random(), (float)random(), (float)random(),
-               (float)random(), (float)random()};
+        meas M = getMeas();
 
         JsonDocument payload;
+        payload["sp_number"] = config["sp_number"];
         payload["tem"] = M.T;
         payload["hum"] = M.H;
         payload["lux"] = M.L;
         payload["vol"] = M.V;
         payload["cur"] = M.A;
 
-        size_t sz = serializeJson(payload, buffer);
-
+        size_t sz =
+            serializeJsonPretty(payload, mqttbuf, config["mqtt_buffer_size"]);
+        Serial.println(mqttbuf);
         if (sz) {
-            const char *topic = config["topic"];
-            client.publish(topic, buffer);
+            const char *topic = config["mqtt_topic"];
+            client.publish(topic, mqttbuf, (int)sz);
         }
-
-        Serial.print(F("Voltage: "));
-        Serial.print(M.V);
-        Serial.println(F(" V"));
-        Serial.print(F("Current: "));
-        Serial.print(M.A);
-        Serial.println(F(" A"));
-        Serial.print(F("Temperature: "));
-        Serial.print(M.T);
-        Serial.println(F("°C"));
-        Serial.print(F("Humidity: "));
-        Serial.print(M.H);
-        Serial.println(F(" %"));
-        Serial.print(F("Light: "));
-        Serial.print(M.L);
-        Serial.println(F(" lux"));
-        Serial.println();
 
         dhcpLoop();
     }
@@ -271,7 +281,7 @@ meas getMeas() {
 
     float A = (float(analogRead(ACS712_PIN)) * 0.026f) - 0.02f;
 
-    float Vo = (float)ads1115.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+    float Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
     float V = voltageDivider * Vo;
 
     return {T, H, L, A, V};
@@ -279,12 +289,12 @@ meas getMeas() {
 
 void dhcpLoop() {
     switch (Ethernet.maintain()) {
-    case 1:
+    case DHCP_CHECK_RENEW_FAIL:
         // renewed fail
         Serial.println(F("ERR: renewed fail"));
         break;
 
-    case 2:
+    case DHCP_CHECK_RENEW_OK:
         // renewed success
         Serial.println(F("INF: Renewed success"));
         // print your local IP address:
@@ -292,12 +302,12 @@ void dhcpLoop() {
         Serial.println(Ethernet.localIP());
         break;
 
-    case 3:
+    case DHCP_CHECK_REBIND_FAIL:
         // rebind fail
         Serial.println(F("ERR: rebind fail"));
         break;
 
-    case 4:
+    case DHCP_CHECK_REBIND_OK:
         // rebind success
         Serial.println(F("INF: Rebind success"));
         // print your local IP address:
