@@ -9,6 +9,7 @@
 #include <Wire.h>
 
 #include <Ethernet.h>
+#include <IPAddress.h>
 #include <MQTT.h>
 #include <SD.h>
 
@@ -25,8 +26,8 @@
 #define TSL2561_SENSOR_ID (0x1)
 #define ACS712_PIN        (A0)
 
-#define R1                1496.0f
-#define R2                200.0f
+#define R1                150000.0f
+#define R2                14960.0f
 
 struct meas {
     float T, H, L, A, V;
@@ -111,16 +112,47 @@ void setup() {
         delay(5000);
     }
 
-    Serial.println("INF: Check `dhcp_timeout`");
-    while (!config["dhcp_timeout"].is<uint32_t>()) {
-        Serial.println("ERR: `dhcp_timeout` not found");
-        delay(5000);
-    }
+    Serial.println("INF: Check `dhcp_enable`");
+    bool dhcpEnable = config["dhcp_enable"].is<bool>() && config["dhcp_enable"];
+    Serial.print("INF: DHCP Client State: ");
+    Serial.println(dhcpEnable ? "ENABLE" : "DISABLE");
 
-    Serial.println("INF: Check `dhcp_response_timeout`");
-    while (!config["dhcp_response_timeout"].is<uint32_t>()) {
-        Serial.println("ERR: `dhcp_response_timeout` not found");
-        delay(5000);
+    if (dhcpEnable) {
+        Serial.println("INF: Check `dhcp_timeout`");
+        while (!config["dhcp_timeout"].is<uint32_t>()) {
+            Serial.println("ERR: `dhcp_timeout` not found");
+            delay(5000);
+        }
+
+        Serial.println("INF: Check `dhcp_response_timeout`");
+        while (!config["dhcp_response_timeout"].is<uint32_t>()) {
+            Serial.println("ERR: `dhcp_response_timeout` not found");
+            delay(5000);
+        }
+    } else {
+        Serial.println("INF: Check `eth_static_ip`");
+        while (!config["eth_static_ip"].is<const char *>()) {
+            Serial.println("ERR: `eth_static_ip` not found");
+            delay(5000);
+        }
+
+        Serial.println("INF: Check `eth_dns`");
+        while (!config["eth_dns"].is<const char *>()) {
+            Serial.println("ERR: `eth_dns` not found");
+            delay(5000);
+        }
+
+        Serial.println("INF: Check `eth_gateway`");
+        while (!config["eth_gateway"].is<const char *>()) {
+            Serial.println("ERR: `eth_gateway` not found");
+            delay(5000);
+        }
+
+        Serial.println("INF: Check `eth_subnet`");
+        while (!config["eth_subnet"].is<const char *>()) {
+            Serial.println("ERR: `eth_subnet` not found");
+            delay(5000);
+        }
     }
 
     Serial.println("INF: Check `delta_time`");
@@ -160,20 +192,34 @@ void setup() {
 
     dht.begin();
 
-    Serial.println(F("INF: Initialize Ethernet with DHCP"));
-    if (!Ethernet.begin(mac, config["dhcp_timeout"].as<uint32_t>(),
-                        config["dhcp_response_timeout"].as<uint32_t>())) {
-        Serial.println(F("ERR: Failed to configure Ethernet using DHCP"));
-        if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-            Serial.println(F("ERR: Ethernet shield was not found."));
-        } else if (Ethernet.linkStatus() == LinkOFF) {
-            Serial.println(F("ERR: Ethernet cable is not connected."));
-        }
+    if (dhcpEnable) {
+        Serial.println(F("INF: Initialize Ethernet with DHCP"));
+        if (!Ethernet.begin(mac, config["dhcp_timeout"].as<uint32_t>(),
+                            config["dhcp_response_timeout"].as<uint32_t>())) {
+            Serial.println(F("ERR: Failed to configure Ethernet with DHCP"));
+            if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+                Serial.println(F("ERR: Ethernet shield was not found."));
+            } else if (Ethernet.linkStatus() == LinkOFF) {
+                Serial.println(F("ERR: Ethernet cable is not connected."));
+            }
 
-        // no point in carrying on, so do nothing forevermore:
-        while (1) {
-            delay(5000);
+            // no point in carrying on, so do nothing forevermore:
+            while (1) {
+                delay(5000);
+            }
         }
+    } else {
+        Serial.println("INF: Initialize Ethernet with static IP");
+        IPAddress ip = {};
+        IPAddress dns = {};
+        IPAddress gateway = {};
+        IPAddress subnet = {};
+        ip.fromString(config["eth_static_ip"].as<const char *>());
+        dns.fromString(config["eth_dns"].as<const char *>());
+        gateway.fromString(config["eth_gateway"].as<const char *>());
+        subnet.fromString(config["eth_subnet"].as<const char *>());
+
+        Ethernet.begin(mac, ip, dns, gateway, subnet);
     }
 
     // print your local IP address:
