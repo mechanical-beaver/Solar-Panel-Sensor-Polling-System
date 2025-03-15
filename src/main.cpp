@@ -82,9 +82,15 @@ void setup() {
 
     getConfig();
 
-    Serial.println("INF: Check `mqtt_host`");
-    while (!config["mqtt_host"].is<const char *>()) {
-        Serial.println("ERR: `mqtt_host` not found");
+    Serial.println("INF: Check `mqtt_ip`");
+    while (!config["mqtt_ip"].is<const char *>()) {
+        Serial.println("ERR: `mqtt_ip` not found");
+        delay(5000);
+    }
+
+    Serial.println("INF: Check `mqtt_port`");
+    while (!config["mqtt_port"].is<uint16_t>()) {
+        Serial.println("ERR: `mqtt_port` not found");
         delay(5000);
     }
 
@@ -190,6 +196,9 @@ void setup() {
         }
     }
 
+    tsl2561.setGain(TSL2561_GAIN_1X);
+    tsl2561.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
+
     dht.begin();
 
     if (dhcpEnable) {
@@ -223,12 +232,17 @@ void setup() {
     }
 
     // print your local IP address:
-    const char *mqtthost = config["mqtt_host"];
+    IPAddress mqttip = {};
+    mqttip.fromString(config["mqtt_ip"].as<const char *>());
+    uint16_t mqttport = config["mqtt_port"].as<uint16_t>();
     Serial.print(F("INF: My IP address "));
     Serial.println(Ethernet.localIP());
     Serial.print(F("INF: MQTT connecting "));
-    Serial.println(mqtthost);
-    client.begin(mqtthost, net);
+    Serial.print(mqttip);
+    Serial.print(F(":"));
+    Serial.print(mqttport);
+    // TODO: Error handling
+    client.begin(mqttip, (int)mqttport, net);
     while (!mqttconn()) {
         Serial.print(F("."));
         delay(1000);
