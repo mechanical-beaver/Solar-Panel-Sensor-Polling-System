@@ -328,16 +328,16 @@ void getConfig() {
 }
 
 meas getMeas() {
-    sensors_event_t e;
+    sensors_event_t eT, eH, eL;
 
-    dht.temperature().getEvent(&e);
-    float T = e.temperature;
+    dht.temperature().getEvent(&eT);
+    float T = eT.temperature;
 
-    dht.humidity().getEvent(&e);
-    float H = e.relative_humidity;
+    dht.humidity().getEvent(&eH);
+    float H = eH.relative_humidity;
 
-    tsl2561.getEvent(&e);
-    float L = e.light;
+    tsl2561.getEvent(&eL);
+    float L = eL.light;
 
     float A = (float(analogRead(ACS712_PIN)) * 0.026f) - 0.02f;
 
