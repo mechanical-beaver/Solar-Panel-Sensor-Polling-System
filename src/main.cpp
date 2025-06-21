@@ -37,7 +37,7 @@
 // #define TSL2561_SENSOR_ID  (0x1)
 #define ACS712_PIN         (A0)
 
-#define ONE_WIRE_PIN       5
+#define ONE_WIRE_PIN       2
 
 #define R1                 150000.0f
 #define R2                 14960.0f
@@ -438,8 +438,6 @@ void lux_power_init(int addr, int addr_reg, int conf) {
 
     // Завершаем передачу
     Wire.endTransmission();
-
-    delay(500);
 }
 
 // Считывание данных с датчика
