@@ -52,7 +52,7 @@ uint32_t dt = 0;
 char *mqttbuf;
 
 // Code configuration regitr
-const uint16_t AH_REG_CONFIG = 0x3274;
+const uint16_t AH_REG_CONFIG = 0x32B4;
 
 constexpr float voltageDivider = (R1 + R2) / R2;
 
