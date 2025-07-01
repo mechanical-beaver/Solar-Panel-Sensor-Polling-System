@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 01 Jul 2025 07:50:30
+ * Last Update: 01 Jul 2025 11:53:42
  *
  * Description: <EMPTY>
  */
@@ -137,7 +137,7 @@ private:
         } data = {};
 
         _i2c->write_then_read(&r, sizeof(r), data.bytes, sizeof(data.bytes));
-        return data.value;
+        return swap_endians(data.value);
     }
 
     template <typename T> void writex(uint8_t r, T value) {
@@ -149,6 +149,16 @@ private:
         data.value = value;
 
         _i2c->write(&r, sizeof(r), data.bytes, sizeof(data.bytes));
+    }
+
+    template <typename T> T swap_endians(T data) {
+        uint8_t tmp[sizeof(T)];
+        for (int16_t i = sizeof(T) - 1; i >= 0; i -= 1) {
+            int16_t shift = (sizeof(T) - 1 - i) * 8;
+            tmp[i] = (data >> shift) & 0xff;
+        }
+
+        return *reinterpret_cast<T *>(tmp);
     }
 
     void writex(uint8_t r) { _i2c->write(&r, 1); }

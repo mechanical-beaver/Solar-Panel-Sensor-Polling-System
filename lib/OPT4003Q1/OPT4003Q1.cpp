@@ -2,12 +2,13 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 01 Jul 2025 10:04:45
+ * Last Update: 01 Jul 2025 11:40:58
  *
  * Description: <EMPTY>
  */
 
 #include "OPT4003Q1.h"
+#include <stdio.h>
 #include <string.h>
 
 OPT4003Q1::OPT4003Q1(int32_t sensorID)
@@ -24,6 +25,9 @@ boolean OPT4003Q1::begin(TwoWire *theWire, uint8_t addr) {
     if (!_i2c->begin()) return false;
 
     uint16_t id = readx<uint16_t>(OPT4003Q1_REGISTER_DEVICE_ID);
+    char buf[40];
+    sprintf(buf, "%d", id);
+    Serial.print(buf);
     if (id != OPT4003Q1_DEVICE_ID) return false;
 
     _initialized = true;
