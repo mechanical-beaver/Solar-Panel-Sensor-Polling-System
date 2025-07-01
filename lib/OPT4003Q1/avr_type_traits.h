@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: avr_type_traits.h
  * Created: 01 Jul 2025 14:34:51
- * Last Update: 01 Jul 2025 14:49:23
+ * Last Update: 02 Jul 2025 02:22:36
  *
  * Description: Replace some type traits for AVR
  */
