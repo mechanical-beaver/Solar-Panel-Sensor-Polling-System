@@ -10,16 +10,19 @@
 #include <Wire.h>
 
 #include <DallasTemperature.h>
-
 #include <Ethernet.h>
 #include <IPAddress.h>
 #include <MQTT.h>
+#include <OPT4003Q1.h>
 #include <SD.h>
 
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_Sensor.h>
 #include <ArduinoJson.h>
+
 // Lux defs
+#define OPT4003Q1_ADDR     OPT4003Q1_I2C_ADDR_VDD
+
 #define OPT_ADDR           0x45 // Адрес устройства
 #define AH_REG_ADDR        0x0A // Адрес регистра концигурации
 #define REG_RESULT_CH0_MSB 0x00 // CH0
@@ -84,11 +87,23 @@ inline bool mqttconn() {
 meas getMeas();
 void dhcpLoop();
 
+OPT4003Q1 opt4003q1;
+
 void setup() {
     Serial.begin(9600);
 
     if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
+        while (1) {
+            delay(1);
+        }
+    }
+
+    /*lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);*/
+    sensors.begin();
+
+    if (opt4003q1.begin(OPT4003Q1_ADDR)) {
+        Serial.println("ERR: OPT4003Q1 initialization failed!");
         while (1) {
             delay(1);
         }
@@ -202,9 +217,6 @@ void setup() {
             delay(1);
         }
     }
-
-    lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
-    sensors.begin();
 
     if (dhcpEnable) {
         Serial.println(F("INF: Initialize Ethernet with DHCP"));
