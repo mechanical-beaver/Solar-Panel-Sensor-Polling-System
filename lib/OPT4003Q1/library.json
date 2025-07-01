@@ -1,0 +1,14 @@
+{
+  "name": "OPT4003Q1",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "Adafruit BusIO",
+      "owner": "adafruit"
+    },
+    {
+      "name": "Adafruit Unified Sensor",
+      "owner": "adafruit"
+    }
+  ]
+}
