@@ -2,13 +2,17 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 01 Jul 2025 11:53:42
+ * Last Update: 01 Jul 2025 14:49:35
  *
  * Description: <EMPTY>
  */
 
 #ifndef _OPT4003Q1_H_
 #define _OPT4003Q1_H_
+
+#ifndef _GLIBCXX_TYPE_TRAITS
+#include "avr_type_traits.h"
+#endif // _GLIBCXX_TYPE_TRAITS
 
 #include <Adafruit_I2CDevice.h>
 #include <Adafruit_Sensor.h>
@@ -130,38 +134,28 @@ private:
     int32_t _sensorID;
     uint8_t _addr;
 
-    template <typename T> T readx(uint8_t r) {
-        union {
-            uint8_t bytes[sizeof(T)];
-            T value;
-        } data = {};
-
-        _i2c->write_then_read(&r, sizeof(r), data.bytes, sizeof(data.bytes));
-        return swap_endians(data.value);
+    template <typename T>
+    typename enable_if<is_same<T, uint8_t>::value, T>::type readx(uint8_t r) {
+        uint8_t v;
+        _i2c->write_then_read(&r, sizeof(r), &v, sizeof(v));
+        return v;
     }
 
-    template <typename T> void writex(uint8_t r, T value) {
-        union {
-            uint8_t bytes[sizeof(T)];
-            T value;
-        } data = {};
-
-        data.value = value;
-
-        _i2c->write(&r, sizeof(r), data.bytes, sizeof(data.bytes));
+    template <typename T>
+    typename enable_if<is_same<T, uint16_t>::value, T>::type readx(uint8_t r) {
+        uint16_t v;
+        _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
+                              sizeof(v));
+        return __builtin_bswap16(v);
     }
 
-    template <typename T> T swap_endians(T data) {
-        uint8_t tmp[sizeof(T)];
-        for (int16_t i = sizeof(T) - 1; i >= 0; i -= 1) {
-            int16_t shift = (sizeof(T) - 1 - i) * 8;
-            tmp[i] = (data >> shift) & 0xff;
-        }
-
-        return *reinterpret_cast<T *>(tmp);
+    void writex(uint8_t r, uint16_t v) {
+        _i2c->write(&r, sizeof(r));
+        v = __builtin_bswap16(v);
+        _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
     }
 
     void writex(uint8_t r) { _i2c->write(&r, 1); }
 };
 
-#endif
+#endif // _OPT4003Q1_H_
