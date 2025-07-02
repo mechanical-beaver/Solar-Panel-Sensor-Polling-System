@@ -99,7 +99,7 @@ void setup() {
         }
     }
 
-    /*lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);*/
+    lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
     sensors.begin();
 
     if (opt4003q1.begin(OPT4003Q1_ADDR)) {

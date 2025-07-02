@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 02 Jul 2025 06:27:09
+ * Last Update: 02 Jul 2025 11:19:47
  *
  * Description: <EMPTY>
  */
@@ -29,15 +29,39 @@ boolean OPT4003Q1::begin(TwoWire *theWire, uint8_t addr) {
 
     _initialized = true;
 
-    // Set Default state for OPT4003Q1
-    // TODO: disable();
+    disable();
 
     return true;
 }
 
 boolean OPT4003Q1::begin(uint8_t addr) { return begin(&Wire, addr); }
 
+void OPT4003Q1::disable() {
+    if (!_initialized) return;
+
+    OPT4003Q1_Config cfg = {};
+    cfg.operatingMode = OPT4003Q1_POWER_DOWN_MODE;
+    cfg.qwake = OPT4003Q1_QWAKE_ENABLE;
+
+    uint16_t v = *reinterpret_cast<uint16_t *>(&cfg);
+    writex(OPT4003Q1_REGISTER_CONFIG_A, v);
+}
+
+void OPT4003Q1::enable() {
+    if (!_initialized) return;
+
+    OPT4003Q1_Config cfg = {OPT4003Q1_FAULT_COUNT_0,     OPT4003Q1_ACTIVE_LOW,
+                            OPT4003Q1_LATCHED_MODE,      OPT4003Q1_ONESHOT_MODE,
+                            OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
+                            OPT4003Q1_QWAKE_ENABLE};
+
+    uint16_t v = *reinterpret_cast<uint16_t *>(&cfg);
+    writex(OPT4003Q1_REGISTER_CONFIG_A, v);
+}
+
 void OPT4003Q1::getSensor(sensor_t *sensor) {
+    if (!_initialized) return;
+
     memset(sensor, 0, sizeof(sensor_t));
 
     strncpy(sensor->name, "OPT4003Q1", sizeof(sensor->name) - 1);

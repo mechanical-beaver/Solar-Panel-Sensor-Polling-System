@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 02 Jul 2025 06:22:09
+ * Last Update: 02 Jul 2025 11:12:55
  *
  * Description: <EMPTY>
  */
@@ -18,9 +18,68 @@
 #include <Adafruit_Sensor.h>
 #include <Arduino.h>
 
-#define OPT4003Q1_I2C_ADDR  (0x44)
+#define OPT4003Q1_I2C_ADDR      (0x44)
 
-#define OPT4003Q1_DEVICE_ID (0x221)
+#define OPT4003Q1_DEVICE_ID     (0x221)
+
+#define OPT4003Q1_QWAKE_ENABLE  (1)
+#define OPT4003Q1_QWAKE_DISABLE (0)
+
+#define OPT4003Q1_RANGE_0       (0x00) ///< 561 lux or 0.429 mW/cm^2
+#define OPT4003Q1_RANGE_1       (0x01) ///< 1122 lux or 0.858 mW/cm^2
+#define OPT4003Q1_RANGE_2       (0x02) ///< 2244 lux or 1.72 mW/cm^2
+#define OPT4003Q1_RANGE_3       (0x03) ///< 4488 lux or 3.43 mW/cm^2
+#define OPT4003Q1_RANGE_4       (0x04) ///< 8976 lux or 6.86 mW/cm^2
+#define OPT4003Q1_RANGE_5       (0x05) ///< 17952 lux or 13.72 mW/cm^2
+#define OPT4003Q1_RANGE_6       (0x06) ///< 35903 lux or 27.45 mW/cm^2
+#define OPT4003Q1_RANGE_7       (0x07) ///< 71806 lux or 27.45 mW/cm^2
+#define OPT4003Q1_RANGE_8       (0x08) ///< 143613 lux or 27.45 mW/cm^2
+#define OPT4003Q1_RANGE_AUTO                                                   \
+    (0x0C) ///< Determined by automatic full-scale range logic;
+           ///< sets channel 0 and channel 1 independently
+
+#define OPT4003Q1_CONVERSION_TIME_0       (0x00) ///< 0.6ms
+#define OPT4003Q1_CONVERSION_TIME_1       (0x01) ///< 1ms
+#define OPT4003Q1_CONVERSION_TIME_2       (0x02) ///< 1.8ms
+#define OPT4003Q1_CONVERSION_TIME_3       (0x03) ///< 3.4ms
+#define OPT4003Q1_CONVERSION_TIME_4       (0x04) ///< 6.5ms
+#define OPT4003Q1_CONVERSION_TIME_5       (0x05) ///< 12.7ms
+#define OPT4003Q1_CONVERSION_TIME_6       (0x06) ///< 25ms
+#define OPT4003Q1_CONVERSION_TIME_7       (0x07) ///< 50ms
+#define OPT4003Q1_CONVERSION_TIME_8       (0x08) ///< 100ms
+#define OPT4003Q1_CONVERSION_TIME_9       (0x09) ///< 200ms
+#define OPT4003Q1_CONVERSION_TIME_10      (0x0A) ///< 400ms
+#define OPT4003Q1_CONVERSION_TIME_11      (0x0B) ///< 800ms
+
+#define OPT4003Q1_POWER_DOWN_MODE         (0)
+#define OPT4003Q1_FORCED_ONESHOT_MODE     (1)
+#define OPT4003Q1_ONESHOT_MODE            (2)
+#define OPT4003Q1_CONTINUOUS_MODE         (3)
+
+#define OPT4003Q1_LATCHED_MODE            (1)
+#define OPT4003Q1_TRANSPARENT_MODE        (0)
+
+#define OPT4003Q1_ACTIVE_LOW              (0)
+#define OPT4003Q1_ACTIVE_HIGH             (1)
+
+#define OPT4003Q1_FAULT_COUNT_0           (0)
+#define OPT4003Q1_FAULT_COUNT_1           (1)
+#define OPT4003Q1_FAULT_COUNT_2           (2)
+#define OPT4003Q1_FAULT_COUNT_3           (3)
+
+#define OPT4003Q1_THRESHOLD_SELECT_CH0    (0)
+#define OPT4003Q1_THRESHOLD_SELECT_CH1    (1)
+
+#define OPT4003Q1_INT_DIR_INPUT           (0)
+#define OPT4003Q1_INT_DIR_OUTPUT          (1)
+
+#define OPT4003Q1_INT_CFG_SMBUS_ALERT     (0)
+#define OPT4003Q1_INT_CFG_ONE_CONVERSION  (1)
+#define OPT4003Q1_INT_CFG_TWO_CONVERSION  (2)
+#define OPT4003Q1_INT_CFG_FOUR_CONVERSION (3)
+
+#define OPT4003Q1_I2C_BURST_ENABLE        (1)
+#define OPT4003Q1_I2C_BURST_DISABLE       (0)
 
 /// OPT4003Q1 I2C address options (based on ADDR pin configuration)
 enum {
@@ -114,6 +173,36 @@ enum {
     OPT4003Q1_REGISTER_DEVICE_ID_HIGH = 0x11,
 };
 
+#pragma pack(push, 1)
+struct OPT4003Q1_Config {
+    uint16_t faultCount : 2;
+    uint16_t interruptPolarity : 1;
+    uint16_t latch : 1;
+    uint16_t operatingMode : 2;
+    uint16_t conversionTime : 4;
+    uint16_t range : 4;
+    uint16_t : 1;
+    uint16_t qwake : 1;
+};
+
+struct OPT4003Q1_IntConfig {
+    uint16_t i2cBurst : 1;
+    uint16_t : 1;
+    uint16_t intCfg : 2;
+    uint16_t intDir : 1;
+    uint16_t threadholdChSel : 1;
+    uint16_t : 10;
+};
+
+struct OPT4003Q1_Status {
+    uint16_t flagl : 1;
+    uint16_t flagh : 1;
+    uint16_t conversionReadyFlag : 1;
+    uint16_t overloadFlag : 1;
+    uint16_t : 12;
+};
+#pragma pack(pop)
+
 class OPT4003Q1 : public Adafruit_Sensor {
 public:
     OPT4003Q1(int32_t sensorID = -1);
@@ -122,6 +211,8 @@ public:
     boolean begin(TwoWire *theWire, uint8_t addr = OPT4003Q1_I2C_ADDR);
     boolean begin(uint8_t addr = OPT4003Q1_I2C_ADDR);
 
+    void disable();
+    void enable();
     uint32_t getIR();
     uint32_t getVis();
 
@@ -139,7 +230,7 @@ private:
 
     template <typename T>
     typename enable_if<is_same<T, uint8_t>::value, T>::type readx(uint8_t r) {
-        if (!_i2c) return 0;
+        if (!_initialized) return 0;
 
         uint8_t v;
         _i2c->write_then_read(&r, sizeof(r), &v, sizeof(v));
@@ -148,7 +239,7 @@ private:
 
     template <typename T>
     typename enable_if<is_same<T, uint16_t>::value, T>::type readx(uint8_t r) {
-        if (!_i2c) return 0;
+        if (!_initialized) return 0;
 
         uint16_t v;
         _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
@@ -157,7 +248,7 @@ private:
     }
 
     void writex(uint8_t r, uint16_t v) {
-        if (!_i2c) return;
+        if (!_initialized) return;
 
         _i2c->write(&r, sizeof(r));
         v = __builtin_bswap16(v);
@@ -165,7 +256,7 @@ private:
     }
 
     void writex(uint8_t r) {
-        if (_i2c) _i2c->write(&r, 1);
+        if (_initialized) _i2c->write(&r, 1);
     }
 };
 
