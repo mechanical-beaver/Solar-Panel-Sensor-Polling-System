@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 02 Jul 2025 02:22:29
+ * Last Update: 02 Jul 2025 06:22:09
  *
  * Description: <EMPTY>
  */
@@ -122,6 +122,9 @@ public:
     boolean begin(TwoWire *theWire, uint8_t addr = OPT4003Q1_I2C_ADDR);
     boolean begin(uint8_t addr = OPT4003Q1_I2C_ADDR);
 
+    uint32_t getIR();
+    uint32_t getVis();
+
     /* Unified Sensor API Functions */
     bool getEvent(sensors_event_t *);
     void getSensor(sensor_t *);
@@ -136,6 +139,8 @@ private:
 
     template <typename T>
     typename enable_if<is_same<T, uint8_t>::value, T>::type readx(uint8_t r) {
+        if (!_i2c) return 0;
+
         uint8_t v;
         _i2c->write_then_read(&r, sizeof(r), &v, sizeof(v));
         return v;
@@ -143,6 +148,8 @@ private:
 
     template <typename T>
     typename enable_if<is_same<T, uint16_t>::value, T>::type readx(uint8_t r) {
+        if (!_i2c) return 0;
+
         uint16_t v;
         _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
                               sizeof(v));
@@ -150,12 +157,16 @@ private:
     }
 
     void writex(uint8_t r, uint16_t v) {
+        if (!_i2c) return;
+
         _i2c->write(&r, sizeof(r));
         v = __builtin_bswap16(v);
         _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
     }
 
-    void writex(uint8_t r) { _i2c->write(&r, 1); }
+    void writex(uint8_t r) {
+        if (_i2c) _i2c->write(&r, 1);
+    }
 };
 
 #endif // _OPT4003Q1_H_

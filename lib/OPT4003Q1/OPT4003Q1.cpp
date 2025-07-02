@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 02 Jul 2025 02:22:19
+ * Last Update: 02 Jul 2025 06:27:09
  *
  * Description: <EMPTY>
  */
@@ -49,6 +49,22 @@ void OPT4003Q1::getSensor(sensor_t *sensor) {
     sensor->max_value = 143000.0;
     sensor->min_value = 0.0;
     sensor->resolution = 0.000001;
+}
+
+uint32_t OPT4003Q1::getVis() {
+    uint32_t v = (uint32_t)readx<uint16_t>(OPT4003Q1_REGISTER_CH0_RESULT_UPPER)
+                     << 16 |
+                 readx<uint16_t>(OPT4003Q1_REGISTER_CH0_RESULT_LOWER);
+
+    return v;
+}
+
+uint32_t OPT4003Q1::getIR() {
+    uint32_t v = (uint32_t)readx<uint16_t>(OPT4003Q1_REGISTER_CH1_RESULT_UPPER)
+                     << 16 |
+                 readx<uint16_t>(OPT4003Q1_REGISTER_CH1_RESULT_LOWER);
+
+    return v;
 }
 
 bool OPT4003Q1::getEvent(sensors_event_t *e) {
