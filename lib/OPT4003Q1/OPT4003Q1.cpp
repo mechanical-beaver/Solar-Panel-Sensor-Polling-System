@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 02 Jul 2025 11:19:47
+ * Last Update: 03 Jul 2025 11:36:11
  *
  * Description: <EMPTY>
  */
@@ -43,20 +43,18 @@ void OPT4003Q1::disable() {
     cfg.operatingMode = OPT4003Q1_POWER_DOWN_MODE;
     cfg.qwake = OPT4003Q1_QWAKE_ENABLE;
 
-    uint16_t v = *reinterpret_cast<uint16_t *>(&cfg);
-    writex(OPT4003Q1_REGISTER_CONFIG_A, v);
+    writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw);
 }
 
 void OPT4003Q1::enable() {
     if (!_initialized) return;
 
-    OPT4003Q1_Config cfg = {OPT4003Q1_FAULT_COUNT_0,     OPT4003Q1_ACTIVE_LOW,
-                            OPT4003Q1_LATCHED_MODE,      OPT4003Q1_ONESHOT_MODE,
-                            OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
-                            OPT4003Q1_QWAKE_ENABLE};
+    OPT4003Q1_Config cfg = {{OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW,
+                             OPT4003Q1_LATCHED_MODE, OPT4003Q1_ONESHOT_MODE,
+                             OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
+                             OPT4003Q1_QWAKE_ENABLE}};
 
-    uint16_t v = *reinterpret_cast<uint16_t *>(&cfg);
-    writex(OPT4003Q1_REGISTER_CONFIG_A, v);
+    writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw);
 }
 
 void OPT4003Q1::getSensor(sensor_t *sensor) {
@@ -75,20 +73,30 @@ void OPT4003Q1::getSensor(sensor_t *sensor) {
     sensor->resolution = 0.000001;
 }
 
-uint32_t OPT4003Q1::getVis() {
-    uint32_t v = (uint32_t)readx<uint16_t>(OPT4003Q1_REGISTER_CH0_RESULT_UPPER)
-                     << 16 |
-                 readx<uint16_t>(OPT4003Q1_REGISTER_CH0_RESULT_LOWER);
+uint32_t OPT4003Q1::getALS() {
+    OPT4003Q1_ResultHigh rh = {};
+    OPT4003Q1_ResultLow rl = {};
+    rh.raw = readx<uint16_t>(OPT4003Q1_REGISTER_CH0_RESULT_HIGH);
+    rl.raw = readx<uint16_t>(OPT4003Q1_REGISTER_CH0_RESULT_LOW);
 
-    return v;
+    uint32_t r = ((rh.msb << 8) + rl.lsb) << rh.e;
+
+    // TODO: CRC Check
+
+    return r;
 }
 
 uint32_t OPT4003Q1::getIR() {
-    uint32_t v = (uint32_t)readx<uint16_t>(OPT4003Q1_REGISTER_CH1_RESULT_UPPER)
-                     << 16 |
-                 readx<uint16_t>(OPT4003Q1_REGISTER_CH1_RESULT_LOWER);
+    OPT4003Q1_ResultHigh rh = {};
+    OPT4003Q1_ResultLow rl = {};
+    rh.raw = readx<uint16_t>(OPT4003Q1_REGISTER_CH1_RESULT_HIGH);
+    rl.raw = readx<uint16_t>(OPT4003Q1_REGISTER_CH1_RESULT_LOW);
 
-    return v;
+    uint32_t r = ((rh.msb << 8) + rl.lsb) << rh.e;
+
+    // TODO: CRC Check
+
+    return r;
 }
 
 bool OPT4003Q1::getEvent(sensors_event_t *e) {

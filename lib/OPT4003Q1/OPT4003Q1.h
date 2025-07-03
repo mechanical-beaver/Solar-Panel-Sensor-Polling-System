@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 02 Jul 2025 11:12:55
+ * Last Update: 03 Jul 2025 11:36:11
  *
  * Description: <EMPTY>
  */
@@ -92,43 +92,43 @@ enum {
 /// OPT4003Q1 Register map
 enum {
     // Channel 0 - Result upper (Exponent + MSB)
-    OPT4003Q1_REGISTER_CH0_RESULT_UPPER = 0x00, // EXPONENT + MSB
+    OPT4003Q1_REGISTER_CH0_RESULT_HIGH = 0x00, // EXPONENT + MSB
     OPT4003Q1_REGISTER_CH0_RESULT_EXPONENT = 0x00,
     OPT4003Q1_REGISTER_CH0_RESULT_MSB = 0x00,
 
     // Channel 0 - Result lower (LSB + Counter + CRC)
-    OPT4003Q1_REGISTER_CH0_RESULT_LOWER = 0x01,
+    OPT4003Q1_REGISTER_CH0_RESULT_LOW = 0x01,
     OPT4003Q1_REGISTER_CH0_RESULT_LSB = 0x01,
     OPT4003Q1_REGISTER_CH0_COUNTER = 0x01,
     OPT4003Q1_REGISTER_CH0_CRC = 0x01,
 
     // Channel 1 - Result upper (Exponent + MSB)
-    OPT4003Q1_REGISTER_CH1_RESULT_UPPER = 0x02,
+    OPT4003Q1_REGISTER_CH1_RESULT_HIGH = 0x02,
     OPT4003Q1_REGISTER_CH1_RESULT_EXPONENT = 0x02,
     OPT4003Q1_REGISTER_CH1_RESULT_MSB = 0x02,
 
     // Channel 1 - Result lower (LSB + Counter + CRC)
-    OPT4003Q1_REGISTER_CH1_RESULT_LOWER = 0x03,
+    OPT4003Q1_REGISTER_CH1_RESULT_LOW = 0x03,
     OPT4003Q1_REGISTER_CH1_RESULT_LSB = 0x03,
     OPT4003Q1_REGISTER_CH1_COUNTER = 0x03,
     OPT4003Q1_REGISTER_CH1_CRC = 0x03,
 
     // FIFO CH0
-    OPT4003Q1_REGISTER_FIFO_CH0_RESULT_UPPER = 0x04,
+    OPT4003Q1_REGISTER_FIFO_CH0_RESULT_HIGH = 0x04,
     OPT4003Q1_REGISTER_FIFO_CH0_EXPONENT = 0x04,
     OPT4003Q1_REGISTER_FIFO_CH0_RESULT_MSB = 0x04,
 
-    OPT4003Q1_REGISTER_FIFO_CH0_RESULT_LOWER = 0x05,
+    OPT4003Q1_REGISTER_FIFO_CH0_RESULT_LOW = 0x05,
     OPT4003Q1_REGISTER_FIFO_CH0_RESULT_LSB = 0x05,
     OPT4003Q1_REGISTER_FIFO_CH0_COUNTER = 0x05,
     OPT4003Q1_REGISTER_FIFO_CH0_CRC = 0x05,
 
     // FIFO CH1
-    OPT4003Q1_REGISTER_FIFO_CH1_RESULT_UPPER = 0x06,
+    OPT4003Q1_REGISTER_FIFO_CH1_RESULT_HIGH = 0x06,
     OPT4003Q1_REGISTER_FIFO_CH1_EXPONENT = 0x06,
     OPT4003Q1_REGISTER_FIFO_CH1_RESULT_MSB = 0x06,
 
-    OPT4003Q1_REGISTER_FIFO_CH1_RESULT_LOWER = 0x07,
+    OPT4003Q1_REGISTER_FIFO_CH1_RESULT_LOW = 0x07,
     OPT4003Q1_REGISTER_FIFO_CH1_RESULT_LSB = 0x07,
     OPT4003Q1_REGISTER_FIFO_CH1_COUNTER = 0x07,
     OPT4003Q1_REGISTER_FIFO_CH1_CRC = 0x07,
@@ -174,32 +174,59 @@ enum {
 };
 
 #pragma pack(push, 1)
-struct OPT4003Q1_Config {
-    uint16_t faultCount : 2;
-    uint16_t interruptPolarity : 1;
-    uint16_t latch : 1;
-    uint16_t operatingMode : 2;
-    uint16_t conversionTime : 4;
-    uint16_t range : 4;
-    uint16_t : 1;
-    uint16_t qwake : 1;
+union OPT4003Q1_Config {
+    struct {
+        uint16_t faultCount : 2;
+        uint16_t interruptPolarity : 1;
+        uint16_t latch : 1;
+        uint16_t operatingMode : 2;
+        uint16_t conversionTime : 4;
+        uint16_t range : 4;
+        uint16_t : 1;
+        uint16_t qwake : 1;
+    };
+    uint16_t raw;
 };
 
-struct OPT4003Q1_IntConfig {
-    uint16_t i2cBurst : 1;
-    uint16_t : 1;
-    uint16_t intCfg : 2;
-    uint16_t intDir : 1;
-    uint16_t threadholdChSel : 1;
-    uint16_t : 10;
+union OPT4003Q1_IntConfig {
+    struct {
+        uint16_t i2cBurst : 1;
+        uint16_t : 1;
+        uint16_t intCfg : 2;
+        uint16_t intDir : 1;
+        uint16_t threadholdChSel : 1;
+        uint16_t : 10;
+    };
+    uint16_t raw;
 };
 
-struct OPT4003Q1_Status {
-    uint16_t flagl : 1;
-    uint16_t flagh : 1;
-    uint16_t conversionReadyFlag : 1;
-    uint16_t overloadFlag : 1;
-    uint16_t : 12;
+union OPT4003Q1_Status {
+    struct {
+        uint16_t flagl : 1;
+        uint16_t flagh : 1;
+        uint16_t conversionReadyFlag : 1;
+        uint16_t overloadFlag : 1;
+        uint16_t : 12;
+    };
+    uint16_t raw;
+};
+
+union OPT4003Q1_ResultHigh {
+    struct {
+        uint16_t msb : 12;
+        uint16_t e : 4;
+    };
+    uint16_t raw;
+};
+
+union OPT4003Q1_ResultLow {
+    struct {
+        uint16_t lsb : 8;
+        uint16_t counter : 4;
+        uint16_t crc : 4;
+    };
+
+    uint16_t raw;
 };
 #pragma pack(pop)
 
@@ -213,12 +240,13 @@ public:
 
     void disable();
     void enable();
+
     uint32_t getIR();
-    uint32_t getVis();
+    uint32_t getALS();
 
     /* Unified Sensor API Functions */
-    bool getEvent(sensors_event_t *);
-    void getSensor(sensor_t *);
+    bool getEvent(sensors_event_t *e);
+    void getSensor(sensor_t *sensor);
 
 private:
     Adafruit_I2CDevice *_i2c = NULL;
@@ -244,14 +272,23 @@ private:
         uint16_t v;
         _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
                               sizeof(v));
-        return __builtin_bswap16(v);
+
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
+        v = __builtin_bswap16(v);
+#endif
+
+        return v;
     }
 
     void writex(uint8_t r, uint16_t v) {
         if (!_initialized) return;
 
         _i2c->write(&r, sizeof(r));
+
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
         v = __builtin_bswap16(v);
+#endif
+
         _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
     }
 
