@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 03 Jul 2025 11:36:11
+ * Last Update: 03 Jul 2025 22:40:43
  *
  * Description: <EMPTY>
  */
@@ -256,19 +256,7 @@ private:
     int32_t _sensorID;
     uint8_t _addr;
 
-    template <typename T>
-    typename enable_if<is_same<T, uint8_t>::value, T>::type readx(uint8_t r) {
-        if (!_initialized) return 0;
-
-        uint8_t v;
-        _i2c->write_then_read(&r, sizeof(r), &v, sizeof(v));
-        return v;
-    }
-
-    template <typename T>
-    typename enable_if<is_same<T, uint16_t>::value, T>::type readx(uint8_t r) {
-        if (!_initialized) return 0;
-
+    uint16_t readx(uint8_t r) {
         uint16_t v;
         _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
                               sizeof(v));
@@ -281,8 +269,6 @@ private:
     }
 
     void writex(uint8_t r, uint16_t v) {
-        if (!_initialized) return;
-
         _i2c->write(&r, sizeof(r));
 
 #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
@@ -290,10 +276,6 @@ private:
 #endif
 
         _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
-    }
-
-    void writex(uint8_t r) {
-        if (_initialized) _i2c->write(&r, 1);
     }
 };
 
