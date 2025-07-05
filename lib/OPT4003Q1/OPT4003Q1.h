@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 03 Jul 2025 22:40:43
+ * Last Update: 05 Jul 2025 14:46:47
  *
  * Description: <EMPTY>
  */
@@ -241,8 +241,8 @@ public:
     void disable();
     void enable();
 
-    uint32_t getIR();
-    uint32_t getALS();
+    float getALS();
+    double getIR();
 
     /* Unified Sensor API Functions */
     bool getEvent(sensors_event_t *e);

@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 03 Jul 2025 22:43:35
+ * Last Update: 05 Jul 2025 14:46:46
  *
  * Description: <EMPTY>
  */
@@ -74,10 +74,10 @@ void OPT4003Q1::getSensor(sensor_t *sensor) {
     sensor->min_delay = 0;
     sensor->max_value = 143000.0;
     sensor->min_value = 0.0;
-    sensor->resolution = 0.000001;
+    sensor->resolution = 1e-6;
 }
 
-uint32_t OPT4003Q1::getALS() {
+float OPT4003Q1::getALS() {
     OPT4003Q1_ResultHigh rh = {};
     OPT4003Q1_ResultLow rl = {};
     rh.raw = readx(OPT4003Q1_REGISTER_CH0_RESULT_HIGH);
@@ -87,10 +87,10 @@ uint32_t OPT4003Q1::getALS() {
 
     // TODO: CRC Check
 
-    return r;
+    return (double)r * 535e-6;
 }
 
-uint32_t OPT4003Q1::getIR() {
+double OPT4003Q1::getIR() {
     OPT4003Q1_ResultHigh rh = {};
     OPT4003Q1_ResultLow rl = {};
     rh.raw = readx(OPT4003Q1_REGISTER_CH1_RESULT_HIGH);
@@ -100,7 +100,7 @@ uint32_t OPT4003Q1::getIR() {
 
     // TODO: CRC Check
 
-    return r;
+    return (double)r * 409e-12;
 }
 
 bool OPT4003Q1::getEvent(sensors_event_t *e) {
