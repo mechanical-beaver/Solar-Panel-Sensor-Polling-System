@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 05 Jul 2025 14:46:47
+ * Last Update: 08 Jul 2025 15:19:24
  *
  * Description: <EMPTY>
  */
@@ -10,12 +10,7 @@
 #ifndef _OPT4003Q1_H_
 #define _OPT4003Q1_H_
 
-#ifndef _GLIBCXX_TYPE_TRAITS
-#include "avr_type_traits.h"
-#endif // _GLIBCXX_TYPE_TRAITS
-
 #include <Adafruit_I2CDevice.h>
-#include <Adafruit_Sensor.h>
 #include <Arduino.h>
 
 #define OPT4003Q1_I2C_ADDR      (0x44)
@@ -230,9 +225,14 @@ union OPT4003Q1_ResultLow {
 };
 #pragma pack(pop)
 
-class OPT4003Q1 : public Adafruit_Sensor {
+struct OPT4003Q1_Light {
+    double ir;
+    float lux;
+};
+
+class OPT4003Q1 {
 public:
-    OPT4003Q1(int32_t sensorID = -1);
+    OPT4003Q1();
     ~OPT4003Q1();
 
     boolean begin(TwoWire *theWire, uint8_t addr = OPT4003Q1_I2C_ADDR);
@@ -244,16 +244,13 @@ public:
     float getALS();
     double getIR();
 
-    /* Unified Sensor API Functions */
-    bool getEvent(sensors_event_t *e);
-    void getSensor(sensor_t *sensor);
+    boolean ready();
 
 private:
     Adafruit_I2CDevice *_i2c = NULL;
 
     boolean _initialized;
 
-    int32_t _sensorID;
     uint8_t _addr;
 
     uint16_t readx(uint8_t r) {

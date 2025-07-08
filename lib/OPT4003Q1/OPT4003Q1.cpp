@@ -2,16 +2,14 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 05 Jul 2025 14:46:46
+ * Last Update: 08 Jul 2025 15:21:24
  *
  * Description: <EMPTY>
  */
 
 #include "OPT4003Q1.h"
-#include <string.h>
 
-OPT4003Q1::OPT4003Q1(int32_t sensorID)
-    : _initialized(false), _sensorID(sensorID) {}
+OPT4003Q1::OPT4003Q1() : _initialized(false) {}
 
 OPT4003Q1::~OPT4003Q1() {
     // TODO: Error handling
@@ -61,23 +59,10 @@ void OPT4003Q1::enable() {
     writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw);
 }
 
-void OPT4003Q1::getSensor(sensor_t *sensor) {
-    if (!_initialized) return;
-
-    memset(sensor, 0, sizeof(sensor_t));
-
-    strncpy(sensor->name, "OPT4003Q1", sizeof(sensor->name) - 1);
-    sensor->name[sizeof(sensor->name) - 1] = 0;
-    sensor->version = 1;
-    sensor->sensor_id = _sensorID;
-    sensor->type = SENSOR_TYPE_LIGHT;
-    sensor->min_delay = 0;
-    sensor->max_value = 143000.0;
-    sensor->min_value = 0.0;
-    sensor->resolution = 1e-6;
-}
-
 float OPT4003Q1::getALS() {
+    // TODO: Error handling
+    if (!_initialized) return 0.0f;
+
     OPT4003Q1_ResultHigh rh = {};
     OPT4003Q1_ResultLow rl = {};
     rh.raw = readx(OPT4003Q1_REGISTER_CH0_RESULT_HIGH);
@@ -91,6 +76,9 @@ float OPT4003Q1::getALS() {
 }
 
 double OPT4003Q1::getIR() {
+    // TODO: Error handling
+    if (!_initialized) return 0.0;
+
     OPT4003Q1_ResultHigh rh = {};
     OPT4003Q1_ResultLow rl = {};
     rh.raw = readx(OPT4003Q1_REGISTER_CH1_RESULT_HIGH);
@@ -103,26 +91,11 @@ double OPT4003Q1::getIR() {
     return (double)r * 409e-12;
 }
 
-bool OPT4003Q1::getEvent(sensors_event_t *e) {
-    /*uint16_t ir, full;*/
-    /*uint32_t lum = getFullLuminosity();*/
-    /* Early silicon seems to have issues when there is a sudden jump in */
-    /* light levels. :( To work around this for now sample the sensor 2x */
-    /*lum = getFullLuminosity();*/
-    /*ir = lum >> 16;*/
-    /*full = lum & 0xFFFF;*/
+boolean OPT4003Q1::ready() {
+    // TODO: Error handling
+    if (!_initialized) return 0.0;
 
-    /* Clear the event */
-    memset(e, 0, sizeof(sensors_event_t));
-
-    /*e->version = sizeof(sensors_event_t);*/
-    /*e->sensor_id = _sensorID;*/
-    /*e->type = SENSOR_TYPE_LIGHT;*/
-    /*e->timestamp = millis();*/
-
-    /* Calculate the actual lux value */
-    /* 0 = sensor overflow (too much light) */
-    /*e->light = calculateLux(full, ir);*/
-
-    return true;
+    OPT4003Q1_Config cfg = {};
+    cfg.raw = readx(OPT4003Q1_REGISTER_CONFIG_A);
+    return cfg.operatingMode == OPT4003Q1_POWER_DOWN_MODE;
 }
