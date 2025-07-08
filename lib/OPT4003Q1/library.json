@@ -5,10 +5,6 @@
     {
       "name": "Adafruit BusIO",
       "owner": "adafruit"
-    },
-    {
-      "name": "Adafruit Unified Sensor",
-      "owner": "adafruit"
     }
   ]
 }

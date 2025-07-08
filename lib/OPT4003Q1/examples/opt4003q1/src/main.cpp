@@ -2,13 +2,13 @@
  * Author: @github.com/annadostoevskaya
  * Filename: main.cpp
  * Created: 01 Jul 2025 09:29:46
- * Last Update: 08 Jul 2025 15:19:03
+ * Last Update: 08 Jul 2025 17:05:40
  *
- * Description: <EMPTY>
+ * Description: OPT4003Q1 light sensor test —
+ * cover/uncover to validate detection of light and darkness.
  */
 
 #include "Arduino.h"
-#include "HardwareSerial.h"
 #include "OPT4003Q1.h"
 
 #define OPT4003Q1_ADDR OPT4003Q1_I2C_ADDR_VDD
@@ -19,32 +19,70 @@ void setup() {
     Serial.begin(9600);
 
     if (!opt4003q1.begin(OPT4003Q1_ADDR)) {
-        Serial.println("ERR: OPT4003Q1 initialization failed!");
+        Serial.println("[err] OPT4003Q1 initialization failed");
         for (;;) {
             delay(5000);
         }
     }
 
-    Serial.println("INF: OPT4003Q1 initialized");
+    Serial.println("[o.k.] OPT4003Q1 initialized");
 }
 
 void loop() {
-    opt4003q1.enable();
+    OPT4003Q1_Light light = {};
 
-    Serial.print("INF: OPT4003Q1 waiting measurements");
-    while (!opt4003q1.ready()) {
-        delay(10);
-        Serial.print(".");
+    Serial.println("=== TEST: PLEASE COVER THE SENSOR ===");
+    delay(2000);
+
+    while (true) {
+        opt4003q1.enable();
+
+        while (!opt4003q1.ready()) {
+            delay(10);
+        }
+
+        light.lux = opt4003q1.getALS();
+        light.ir = opt4003q1.getIR();
+
+        Serial.print("Reading (covered): ");
+        Serial.print(light.lux);
+        Serial.println(" lux");
+
+        if (light.lux < 5.0) {
+            Serial.println("[o.k.] Low light detected — sensor is covered");
+            break;
+        }
+
+        delay(500);
     }
 
-    Serial.println();
+    Serial.println("=== TEST: NOW UNCOVER THE SENSOR ===");
+    delay(2000);
 
-    OPT4003Q1_Light light = {};
-    light.lux = opt4003q1.getALS();
-    light.ir = opt4003q1.getIR();
+    while (true) {
+        opt4003q1.enable();
 
-    Serial.print("INF: Result ALS: ");
-    Serial.println(light.lux);
-    Serial.print("INF: Result IR: ");
-    Serial.println(light.ir);
+        while (!opt4003q1.ready()) {
+            delay(10);
+        }
+
+        light.lux = opt4003q1.getALS();
+        light.ir = opt4003q1.getIR();
+
+        Serial.print("Reading (uncovered): ");
+        Serial.print(light.lux);
+        Serial.println(" lux");
+
+        if (light.lux > 50.0) {
+            Serial.println("[o.k.] Light detected — sensor is uncovered");
+            break;
+        }
+
+        delay(500);
+    }
+
+    Serial.println("[o.k.] TEST PASSED SUCCESSFULLY");
+
+    // Optional pause before repeating
+    delay(10000);
 }
