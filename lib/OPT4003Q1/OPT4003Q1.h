@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 08 Jul 2025 15:19:24
+ * Last Update: 09 Jul 2025 15:13:58
  *
  * Description: <EMPTY>
  */
@@ -232,7 +232,7 @@ struct OPT4003Q1_Light {
 
 class OPT4003Q1 {
 public:
-    OPT4003Q1();
+    OPT4003Q1(boolean enableCrc = false);
     ~OPT4003Q1();
 
     boolean begin(TwoWire *theWire, uint8_t addr = OPT4003Q1_I2C_ADDR);
@@ -244,7 +244,8 @@ public:
     float getALS();
     double getIR();
 
-    boolean ready();
+    boolean isEnable();
+    inline boolean isReady() { return !isEnable(); }
 
 private:
     Adafruit_I2CDevice *_i2c = NULL;
@@ -252,6 +253,7 @@ private:
     boolean _initialized;
 
     uint8_t _addr;
+    boolean _enableCrc;
 
     uint16_t readx(uint8_t r) {
         uint16_t v;
@@ -274,6 +276,8 @@ private:
 
         _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
     }
+
+    boolean verifyCrc(uint32_t m, uint8_t e, uint8_t c, uint8_t crc);
 };
 
 #endif // _OPT4003Q1_H_

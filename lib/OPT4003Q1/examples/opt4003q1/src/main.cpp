@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: main.cpp
  * Created: 01 Jul 2025 09:29:46
- * Last Update: 08 Jul 2025 17:05:40
+ * Last Update: 09 Jul 2025 15:13:44
  *
  * Description: OPT4003Q1 light sensor test —
  * cover/uncover to validate detection of light and darkness.
@@ -13,7 +13,7 @@
 
 #define OPT4003Q1_ADDR OPT4003Q1_I2C_ADDR_VDD
 
-OPT4003Q1 opt4003q1 = {};
+OPT4003Q1 opt4003q1(true);
 
 void setup() {
     Serial.begin(9600);
@@ -37,7 +37,7 @@ void loop() {
     while (true) {
         opt4003q1.enable();
 
-        while (!opt4003q1.ready()) {
+        while (!opt4003q1.isReady()) {
             delay(10);
         }
 
@@ -62,7 +62,7 @@ void loop() {
     while (true) {
         opt4003q1.enable();
 
-        while (!opt4003q1.ready()) {
+        while (!opt4003q1.isReady()) {
             delay(10);
         }
 
