@@ -2,18 +2,19 @@
  * Author: @github.com/annadostoevskaya
  * Filename: main.cpp
  * Created: 01 Jul 2025 09:29:46
- * Last Update: 09 Jul 2025 15:18:05
+ * Last Update: 12 Jul 2025 22:20:12
  *
  * Description: OPT4003Q1 light sensor test —
  * cover/uncover to validate detection of light and darkness.
  */
 
 #include "Arduino.h"
+#include "HardwareSerial.h"
 #include "OPT4003Q1.h"
 
 #define OPT4003Q1_ADDR OPT4003Q1_I2C_ADDR_VDD
 
-OPT4003Q1 opt4003q1(true);
+OPT4003Q1 opt4003q1(false);
 
 void setup() {
     Serial.begin(9600);
@@ -38,6 +39,7 @@ void loop() {
         opt4003q1.enable();
 
         while (!opt4003q1.isReady()) {
+            Serial.println("check");
             delay(10);
         }
 

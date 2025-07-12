@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 09 Jul 2025 15:27:37
+ * Last Update: 12 Jul 2025 22:22:24
  *
  * Description: <EMPTY>
  */
@@ -10,6 +10,7 @@
 #ifndef _OPT4003Q1_H_
 #define _OPT4003Q1_H_
 
+#include "HardwareSerial.h"
 #include <Adafruit_I2CDevice.h>
 #include <Arduino.h>
 
@@ -245,7 +246,11 @@ public:
     double getIR();
 
     boolean isEnable();
-    inline boolean isReady() { return !isEnable(); }
+    inline boolean isReady() {
+        OPT4003Q1_Status cfg = {};
+        cfg.raw = readx(OPT4003Q1_REGISTER_FLAGS);
+        return cfg.conversionReadyFlag;
+    }
 
 private:
     Adafruit_I2CDevice *_i2c = NULL;
@@ -256,23 +261,37 @@ private:
     boolean _enableCrc;
 
     uint16_t readx(uint8_t r) {
-        uint16_t v;
+        uint16_t v = 0;
+        if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
+            Serial.println(v, BIN);
+        }
         _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
                               sizeof(v));
+
+        if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
+            Serial.println(v, BIN);
+        }
 
 #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
         v = __builtin_bswap16(v);
 #endif
+
+        if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
+            Serial.println(v, BIN);
+        }
 
         return v;
     }
 
     void writex(uint8_t r, uint16_t v) {
-        _i2c->write(&r, sizeof(r));
-
 #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
         v = __builtin_bswap16(v);
 #endif
+
+        // TODO: Maybe we should find more elegant way
+        uint8_t b[3] = {};
+        b[0] = r;
+        memcpy(&b[1], &v, sizeof(v));
 
         _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
     }

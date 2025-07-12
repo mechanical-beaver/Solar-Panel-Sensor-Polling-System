@@ -2,13 +2,14 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 09 Jul 2025 15:29:06
+ * Last Update: 12 Jul 2025 22:09:09
  *
  * Description: <EMPTY>
  */
 
 #include "OPT4003Q1.h"
 #include "Arduino.h"
+#include "HardwareSerial.h"
 
 OPT4003Q1::OPT4003Q1(boolean enableCrc)
     : _initialized(false), _enableCrc(enableCrc) {}
@@ -70,8 +71,19 @@ float OPT4003Q1::getALS() {
     rh.raw = readx(OPT4003Q1_REGISTER_CH0_RESULT_HIGH);
     rl.raw = readx(OPT4003Q1_REGISTER_CH0_RESULT_LOW);
 
+    Serial.print("E: ");
+    Serial.println(rh.e);
+
+    Serial.print("MSB: ");
+    Serial.println(rh.msb);
+
+    Serial.print("LSB: ");
+    Serial.println(rl.lsb);
     uint32_t m = (uint32_t)(rh.msb << 8) + rl.lsb;
     uint32_t r = m << rh.e;
+
+    Serial.print("C: ");
+    Serial.println(rl.counter);
 
     if (_enableCrc && !verifyCrc(m, rh.e, rl.counter, rl.crc)) {
 #ifdef _OPT4003Q1_VERBOSE_
