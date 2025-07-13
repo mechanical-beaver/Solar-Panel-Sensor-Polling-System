@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 12 Jul 2025 22:09:09
+ * Last Update: 13 Jul 2025 17:35:04
  *
  * Description: <EMPTY>
  */
@@ -10,6 +10,7 @@
 #include "OPT4003Q1.h"
 #include "Arduino.h"
 #include "HardwareSerial.h"
+#include <cstdint>
 
 OPT4003Q1::OPT4003Q1(boolean enableCrc)
     : _initialized(false), _enableCrc(enableCrc) {}
@@ -54,12 +55,65 @@ void OPT4003Q1::enable() {
     // TODO: Error handling
     if (!_initialized) return;
 
-    OPT4003Q1_Config cfg = {{OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW,
-                             OPT4003Q1_LATCHED_MODE, OPT4003Q1_ONESHOT_MODE,
-                             OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
-                             OPT4003Q1_QWAKE_ENABLE}};
+    OPT4003Q1_Config cfg = {.raw = readx(OPT4003Q1_REGISTER_CONFIG_A)};
+    Serial.print("Qwake: ");
+    Serial.println(cfg.qwake, BIN);
+    Serial.print("Range: 0x");
+    Serial.println(cfg.range, HEX);
+    Serial.print("Conversion Time: 0x");
+    Serial.println(cfg.conversionTime, HEX);
+    Serial.print("OpMode: 0x");
+    Serial.println(cfg.operatingMode, HEX);
+    Serial.print("Latch: ");
+    Serial.println(cfg.latch, BIN);
+    Serial.print("IntPol: ");
+    Serial.println(cfg.interruptPolarity, BIN);
+    Serial.print("Fault count: 0x");
+    Serial.println(cfg.faultCount, HEX);
 
     writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw);
+
+    cfg.raw = readx(OPT4003Q1_REGISTER_CONFIG_A);
+
+    Serial.print("Qwake: ");
+    Serial.println(cfg.qwake, BIN);
+    Serial.print("Range: 0x");
+    Serial.println(cfg.range, HEX);
+    Serial.print("Conversion Time: 0x");
+    Serial.println(cfg.conversionTime, HEX);
+    Serial.print("OpMode: 0x");
+    Serial.println(cfg.operatingMode, HEX);
+    Serial.print("Latch: ");
+    Serial.println(cfg.latch, BIN);
+    Serial.print("IntPol: ");
+    Serial.println(cfg.interruptPolarity, BIN);
+    Serial.print("Fault count: 0x");
+    Serial.println(cfg.faultCount, HEX);
+
+    OPT4003Q1_Config cfg2 = {{OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW,
+                              OPT4003Q1_LATCHED_MODE, OPT4003Q1_ONESHOT_MODE,
+                              OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
+                              OPT4003Q1_QWAKE_ENABLE}};
+
+    writex(OPT4003Q1_REGISTER_CONFIG_A, cfg2.raw);
+
+    cfg2.raw = 0;
+
+    cfg2.raw = readx(OPT4003Q1_REGISTER_CONFIG_A);
+    Serial.print("Qwake: ");
+    Serial.println(cfg2.qwake, BIN);
+    Serial.print("Range: 0x");
+    Serial.println(cfg2.range, HEX);
+    Serial.print("Conversion Time: 0x");
+    Serial.println(cfg2.conversionTime, HEX);
+    Serial.print("OpMode: 0x");
+    Serial.println(cfg2.operatingMode, HEX);
+    Serial.print("Latch: ");
+    Serial.println(cfg2.latch, BIN);
+    Serial.print("IntPol: ");
+    Serial.println(cfg2.interruptPolarity, BIN);
+    Serial.print("Fault count: 0x");
+    Serial.println(cfg2.faultCount, HEX);
 }
 
 float OPT4003Q1::getALS() {
@@ -124,6 +178,42 @@ boolean OPT4003Q1::isEnable() {
     OPT4003Q1_Config cfg = {};
     cfg.raw = readx(OPT4003Q1_REGISTER_CONFIG_A);
     return cfg.operatingMode != OPT4003Q1_POWER_DOWN_MODE;
+}
+
+uint16_t OPT4003Q1::readx(uint8_t r) {
+    uint16_t v = 0;
+    if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
+        Serial.println(v, BIN);
+    }
+    _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
+                          sizeof(v));
+
+    if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
+        Serial.println(v, BIN);
+    }
+
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
+    v = __builtin_bswap16(v);
+#endif
+
+    if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
+        Serial.println(v, BIN);
+    }
+
+    return v;
+}
+
+void OPT4003Q1::writex(uint8_t r, uint16_t v) {
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
+    v = __builtin_bswap16(v);
+#endif
+
+    // TODO: Maybe we should find more elegant way
+    uint8_t b[3];
+    *b = r;
+    *(uint16_t *)(b + 1) = v;
+
+    _i2c->write(b, sizeof(b));
 }
 
 boolean OPT4003Q1::verifyCrc(uint32_t m, uint8_t e, uint8_t c, uint8_t crc) {

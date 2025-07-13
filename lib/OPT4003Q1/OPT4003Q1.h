@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 12 Jul 2025 22:22:24
+ * Last Update: 13 Jul 2025 17:15:17
  *
  * Description: <EMPTY>
  */
@@ -260,42 +260,8 @@ private:
     uint8_t _addr;
     boolean _enableCrc;
 
-    uint16_t readx(uint8_t r) {
-        uint16_t v = 0;
-        if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
-            Serial.println(v, BIN);
-        }
-        _i2c->write_then_read(&r, sizeof(r), reinterpret_cast<uint8_t *>(&v),
-                              sizeof(v));
-
-        if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
-            Serial.println(v, BIN);
-        }
-
-#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
-        v = __builtin_bswap16(v);
-#endif
-
-        if (r == OPT4003Q1_REGISTER_CH0_RESULT_HIGH) {
-            Serial.println(v, BIN);
-        }
-
-        return v;
-    }
-
-    void writex(uint8_t r, uint16_t v) {
-#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
-        v = __builtin_bswap16(v);
-#endif
-
-        // TODO: Maybe we should find more elegant way
-        uint8_t b[3] = {};
-        b[0] = r;
-        memcpy(&b[1], &v, sizeof(v));
-
-        _i2c->write(reinterpret_cast<uint8_t *>(&v), sizeof(v));
-    }
-
+    uint16_t readx(uint8_t r);
+    void writex(uint8_t r, uint16_t v);
     boolean verifyCrc(uint32_t m, uint8_t e, uint8_t c, uint8_t crc);
 };
 
