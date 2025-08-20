@@ -63,13 +63,6 @@ Adafruit_ADS1015 ads1015;
 OneWire oneWire(ONE_WIRE_PIN);
 DallasTemperature sensors(&oneWire);
 
-// Digital Temperature and Humidity sensor
-// DHT_Unified dht(DHT_PIN, DHT_TYPE);
-
-// Luminosity sensor
-// Adafruit_TSL2561_Unified tsl2561 =
-//     Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, TSL2561_SENSOR_ID);
-
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = {0x00, 0xb0, 0x5a, 0x85, 0x6b, 0x00};
@@ -99,6 +92,8 @@ inline bool mqttconn() {
 
 meas getMeas();
 void dhcpLoop();
+
+void CommandHandler(String &topic, String &payload);
 
 void setup() {
     Serial.begin(9600);
@@ -219,17 +214,6 @@ void setup() {
         }
     }
 
-    // if (!tsl2561.begin()) {
-    //     Serial.println(F("ERR: Failed to initialize TSL2561"));
-    //     while (1) {
-    //         delay(1);
-    //     }
-    // }
-
-    // tsl2561.setGain(TSL2561_GAIN_1X);
-    // tsl2561.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
-
-    // dht.begin();
     lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
     sensors.begin();
 
@@ -275,6 +259,12 @@ void setup() {
     Serial.print(mqttport);
     // TODO: Error handling
     client.begin(mqttip, (int)mqttport, net);
+
+    //---------------------NEW-----------
+    client.onMessage(CommandHandler);
+
+    client.subscribe("device/commands");
+    //---------------------NEW-----------
     while (!mqttconn()) {
         Serial.print(F("."));
         delay(1000);
@@ -361,17 +351,6 @@ void getConfig() {
 }
 
 meas getMeas() {
-    // sensors_event_t eT, eH, eL;
-    //
-    // dht.temperature().getEvent(&eT);
-    // float T = eT.temperature;
-    //
-    // dht.humidity().getEvent(&eH);
-    // float H = eH.relative_humidity;
-    //
-    // tsl2561.getEvent(&eL);
-    // float L = eL.light;
-
     // Get Lux and mW/cm^2
     float L, mW = 0.000;
     lux_pow_data(&L, &mW);
@@ -439,6 +418,19 @@ void lux_power_init(int addr, int addr_reg, int conf) {
     // Завершаем передачу
     Wire.endTransmission();
 }
+
+//------------------------------------------NEW-----------
+// MessageHandler
+void CommandHandler(String &topic, String &payload) {
+    Serial.print("Топик: ");
+    Serial.println(topic);
+
+    Serial.print("Сообщение: ");
+    Serial.println(payload);
+
+    Serial.println("1");
+}
+//--------------------------------------------------------
 
 // Считывание данных с датчика
 /********************************************************/
