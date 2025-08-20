@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 13 Jul 2025 17:15:17
+ * Last Update: 21 Aug 2025 00:18:43
  *
  * Description: <EMPTY>
  */
@@ -217,9 +217,9 @@ union OPT4003Q1_ResultHigh {
 
 union OPT4003Q1_ResultLow {
     struct {
-        uint16_t lsb : 8;
-        uint16_t counter : 4;
         uint16_t crc : 4;
+        uint16_t counter : 4;
+        uint16_t lsb : 8;
     };
 
     uint16_t raw;
@@ -261,7 +261,7 @@ private:
     boolean _enableCrc;
 
     uint16_t readx(uint8_t r);
-    void writex(uint8_t r, uint16_t v);
+    bool writex(uint8_t r, uint16_t v);
     boolean verifyCrc(uint32_t m, uint8_t e, uint8_t c, uint8_t crc);
 };
 

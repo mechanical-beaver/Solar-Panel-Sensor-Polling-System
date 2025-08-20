@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: main.cpp
  * Created: 01 Jul 2025 09:29:46
- * Last Update: 12 Jul 2025 22:20:12
+ * Last Update: 21 Aug 2025 00:53:12
  *
  * Description: OPT4003Q1 light sensor test —
  * cover/uncover to validate detection of light and darkness.
@@ -14,7 +14,7 @@
 
 #define OPT4003Q1_ADDR OPT4003Q1_I2C_ADDR_VDD
 
-OPT4003Q1 opt4003q1(false);
+OPT4003Q1 opt4003q1(true);
 
 void setup() {
     Serial.begin(9600);
@@ -37,22 +37,23 @@ void loop() {
 
     while (true) {
         opt4003q1.enable();
-
-        while (!opt4003q1.isReady()) {
-            Serial.println("check");
-            delay(10);
-        }
+        do {
+            delay(20);
+        } while (!opt4003q1.isReady());
 
         light.lux = opt4003q1.getALS();
-        light.ir = opt4003q1.getIR();
+        /*light.ir = opt4003q1.getIR();*/
 
         Serial.print("Reading (covered): ");
         Serial.print(light.lux);
-        Serial.println(" lux");
+        Serial.print(" lux; ");
+        /*Serial.print(light.ir);*/
+        /*Serial.print(" mW/cm^2");*/
+        Serial.println();
 
         if (light.lux < 5.0) {
             Serial.println("[o.k.] Low light detected — sensor is covered");
-            break;
+            /*break;*/
         }
 
         delay(500);
@@ -64,16 +65,19 @@ void loop() {
     while (true) {
         opt4003q1.enable();
 
-        while (!opt4003q1.isReady()) {
-            delay(10);
-        }
+        do {
+            delay(20);
+        } while (!opt4003q1.isReady());
 
         light.lux = opt4003q1.getALS();
-        light.ir = opt4003q1.getIR();
+        /*light.ir = opt4003q1.getIR();*/
 
         Serial.print("Reading (uncovered): ");
         Serial.print(light.lux);
-        Serial.println(" lux");
+        Serial.print(" lux; ");
+        /*Serial.print(light.ir);*/
+        /*Serial.print(" mW/cm^2");*/
+        Serial.println();
 
         if (light.lux > 50.0) {
             Serial.println("[o.k.] Light detected — sensor is uncovered");
@@ -86,5 +90,5 @@ void loop() {
     Serial.println("[o.k.] TEST PASSED SUCCESSFULLY");
 
     // Optional pause before repeating
-    delay(10000);
+    delay(100000);
 }
