@@ -339,8 +339,7 @@ meas getMeas() {
     tsl2561.getEvent(&eL);
     float L = eL.light;
 
-    float A = (float(analogRead(ACS712_PIN)) * 0.026f) - 0.02f;
-
+    float A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
     float Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
     float V = voltageDivider * Vo;
 
