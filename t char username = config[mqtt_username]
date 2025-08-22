@@ -1,0 +1,114 @@
+[33mcommit b015924141c3613fcd20abc067a14ae3220039d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: onionsew <sheinmaiere@gmail.com>
+Date:   Tue Jun 24 13:18:57 2025 +0500
+
+     fix gain
+
+[33mcommit 9e9e2c85009e779e97d47455c79757658d49e6f3[m
+Author: onionsew <sheinmaiere@gmail.com>
+Date:   Sun Jun 22 00:29:18 2025 +0500
+
+    changet pin for temp_sensor
+
+[33mcommit 1d43e9ca7c0120f4b636dbdefb7f547a2ca84323[m
+Author: Mechanical Beaver <pyroasperin@gmail.com>
+Date:   Sat Jun 21 22:14:18 2025 +0500
+
+    updated
+
+[33mcommit eb9a169e24a926652b8cadae5b0f2f96c37254a1[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Mon Mar 17 13:12:35 2025 +0500
+
+    fix: new event for each sensor
+
+[33mcommit f77aa1a35fc90214ab7a4700cf34ded4b5cc1e82[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Sun Mar 16 02:35:59 2025 +0500
+
+    fix: mqtt port and set gain and integration time
+
+[33mcommit 4c5dc5c3f0763de8e38a91330302790a6d983479[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Mon Mar 3 14:33:00 2025 +0500
+
+    feat: static ip
+
+[33mcommit f60394aced46a9b0cff251ff17fb0b127746482b[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Sat Feb 22 16:31:56 2025 +0500
+
+    feat: config
+
+[33mcommit 40982736e1654da9d49cf8ac260be93aff23c5f1[m
+Merge: 585f2e0 159e265
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Sat Feb 22 13:53:25 2025 +0500
+
+    Merge branch 'main' of github.com:mechanical-beaver/Solar-Panel-Sensor-Polling-System
+
+[33mcommit 585f2e060b8877292a822dbe63f453ad964a1af2[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Sat Feb 22 13:52:02 2025 +0500
+
+    feat: write config
+
+[33mcommit 159e26519370f9e579c042db0ed91605151c910a[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Wed Feb 19 23:32:23 2025 +0500
+
+    fix: doc
+
+[33mcommit 63ef08029b684afb4e1c2fa6c6933078e616fb8e[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Tue Feb 18 23:29:39 2025 +0500
+
+    documentation
+
+[33mcommit 910aabd38b56b76634b15e789a23397ef3eba757[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Tue Feb 18 19:43:24 2025 +0500
+
+    feat: mqtt
+
+[33mcommit f56e89a2fd4dc529642450cafc5445647e2b2daa[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Tue Feb 18 01:18:29 2025 +0500
+
+    feat: json config
+
+[33mcommit c70c77aca3e0c5030918d022de74c54b81d9f5ef[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Fri Feb 14 14:07:16 2025 +0500
+
+    feat: mqtt
+
+[33mcommit 9d67f294554512b8eb4cc1491f1b07e6322f527c[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Thu Feb 13 15:07:53 2025 +0500
+
+    feat: move measurements to struct meas
+
+[33mcommit 66358190cdf61b46e2dbd610365304b056a95731[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Wed Feb 12 20:16:41 2025 +0500
+
+    feat: install mqtt library
+
+[33mcommit 58917d43c0dec4353b3f9d375c241df71a1843b7[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Wed Feb 12 19:23:56 2025 +0500
+
+    feat: refactoring
+
+[33mcommit dcb4db328d8f07a41ea2ec1f6640d9927b92df75[m
+Author: Anna Dostoevskaya <iwantknow.aboutjt68h43@gmail.com>
+Date:   Wed Feb 12 17:59:59 2025 +0500
+
+    feat: clean
+
+[33mcommit 03fd9bdf7717b2ecacec9acba692266e5d070c98[m
+Author: Mechanical Beaver <pyroasperin@gmail.com>
+Date:   Mon Feb 10 21:29:11 2025 +0500
+
+    upload to GitHub

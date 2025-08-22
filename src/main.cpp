@@ -1,3 +1,6 @@
+// #include <cstdio.h>
+#include "ArduinoJson/Array/JsonArray.hpp"
+#include "ArduinoJson/Json/JsonSerializer.hpp"
 #include <stdint.h>
 // #include <stdio.h>
 #include <stdlib.h>
@@ -31,11 +34,11 @@
 #define REG_RESULT_CH1_LSB 0x03 // CH1
 
 #define CONFIG_FILENAME    ("CONFIG.TXT")
-#define DHT_PIN            (0x2)
 #define SD_PIN             (4)
-// #define DHT_TYPE           (DHT22)
-// #define TSL2561_SENSOR_ID  (0x1)
 #define ACS712_PIN         (A0)
+
+#define I_POINTS           50
+#define V_POINTS           50
 
 #define ONE_WIRE_PIN       2
 
@@ -45,6 +48,19 @@
 struct meas {
     // float T, H, L, A, V;
     float T, L, mW, A, V;
+};
+
+struct command_pack {
+    float I[I_POINTS];
+    float V[V_POINTS];
+    // uint16_t YY;
+    // uint8_t MM;
+    // uint8_t DD;
+    // uint8_t HH;
+    // uint8_t MM;
+    // uint8_t SS;
+    // uint8_t MSMS;
+    int16_t sp_number;
 };
 
 uint32_t start = 0;
@@ -82,18 +98,66 @@ void lux_pow_data(float *Lx, float *Pw);
 // Temp get data
 float getTemp();
 
-float getTemp();
-
 inline bool mqttconn() {
     const char *username = config["mqtt_username"];
     const char *password = config["mqtt_password"];
-    return client.connect("", username, password);
+    bool succes = client.connect("", username, password);
+
+    client.subscribe("/device/commands");
+
+    return succes;
 }
 
 meas getMeas();
 void dhcpLoop();
 
-void CommandHandler(String &topic, String &payload);
+// MessageHandler
+void CommandHandler(String &topic, String &payload) {
+    char msg[100];
+    sprintf(msg, "Topic: %s; Command: $s", topic.c_str(), payload.c_str());
+
+    JsonDocument request;
+    JsonDocument resultJson;
+
+    DeserializationError err = deserializeJson(request, payload.c_str());
+
+    if (!request["sp_number"].is<uint16_t>()) {
+        Serial.println("ERR: Dont correct sp_number");
+        return;
+    }
+
+    String cmd = request["command"];
+
+    if (topic == "/device/commands") {
+        if (config["sp_number"] == request["sp_number"]) {
+            if (cmd == "start") {
+                Serial.println("1");
+
+                //
+                //
+                //
+                //
+                //
+
+                command_pack res;
+
+                JsonArray I = resultJson["I"].to<JsonArray>();
+                for (int i = 0; i < I_POINTS; i++) {
+                    I.add(res.I[i]);
+                }
+
+                JsonArray V = resultJson["V"].to<JsonArray>();
+                for (int i = 0; i < V_POINTS; i++) {
+                    V.add(res.V[i]);
+                }
+
+                resultJson["sp_number"] = request["sp_number"];
+                String output;
+                serializeJson(resultJson, output);
+            }
+        }
+    }
+}
 
 void setup() {
     Serial.begin(9600);
@@ -260,15 +324,14 @@ void setup() {
     // TODO: Error handling
     client.begin(mqttip, (int)mqttport, net);
 
-    //---------------------NEW-----------
     client.onMessage(CommandHandler);
 
-    client.subscribe("device/commands");
-    //---------------------NEW-----------
     while (!mqttconn()) {
         Serial.print(F("."));
         delay(1000);
     }
+
+    Serial.println("\n INF: MQTT connected ");
 }
 
 void loop() {
@@ -292,7 +355,6 @@ void loop() {
         payload["sp_number"] = config["sp_number"];
         payload["tem"] = M.T;
         payload["mW"] = M.mW;
-        // payload["hum"] = M.H;
         payload["lux"] = M.L;
         payload["vol"] = M.V;
         payload["cur"] = M.A;
@@ -338,6 +400,7 @@ void getConfig() {
     }
 
     Serial.println(content);
+    // DeserializationError err = deserializeJson(config, content);
     DeserializationError err = deserializeJson(config, content);
     if (err) {
         Serial.print(F("ERR: Deserialization failed, "));
@@ -418,19 +481,6 @@ void lux_power_init(int addr, int addr_reg, int conf) {
     // Завершаем передачу
     Wire.endTransmission();
 }
-
-//------------------------------------------NEW-----------
-// MessageHandler
-void CommandHandler(String &topic, String &payload) {
-    Serial.print("Топик: ");
-    Serial.println(topic);
-
-    Serial.print("Сообщение: ");
-    Serial.println(payload);
-
-    Serial.println("1");
-}
-//--------------------------------------------------------
 
 // Считывание данных с датчика
 /********************************************************/
