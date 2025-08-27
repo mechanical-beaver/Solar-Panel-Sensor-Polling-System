@@ -1,6 +1,7 @@
 // #include <cstdio.h>
 #include "ArduinoJson/Array/JsonArray.hpp"
 #include "ArduinoJson/Json/JsonSerializer.hpp"
+// #include <cstdint>
 #include <stdint.h>
 // #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@
 #include <Adafruit_TSL2561_U.h>
 #include <ArduinoJson.h>
 #include <DHT_U.h>
+#include <string.h>
 // Lux defs
 #define OPT_ADDR           0x45 // Адрес устройства
 #define AH_REG_ADDR        0x0A // Адрес регистра концигурации
@@ -36,11 +38,14 @@
 #define CONFIG_FILENAME    ("CONFIG.TXT")
 #define SD_PIN             (4)
 #define ACS712_PIN         (A0)
-
-#define I_POINTS           50
-#define V_POINTS           50
-
+#define RELAY_PIN          10
 #define ONE_WIRE_PIN       2
+
+#define VAC_STEP           2
+#define VAC_POINTS         25 * VAC_STEP
+#define VAC_LAG            500
+
+// #define VAC_POINTS         50
 
 #define R1                 150000.0f
 #define R2                 14960.0f
@@ -51,8 +56,8 @@ struct meas {
 };
 
 struct command_pack {
-    float I[I_POINTS];
-    float V[V_POINTS];
+    float I[VAC_POINTS];
+    float V[VAC_POINTS];
     // uint16_t YY;
     // uint8_t MM;
     // uint8_t DD;
@@ -62,6 +67,9 @@ struct command_pack {
     // uint8_t MSMS;
     int16_t sp_number;
 };
+
+const uint8_t pwmPin1 = 3; // OC2B — Timer2
+const uint8_t pwmPin2 = 9; // OC1A — Timer1
 
 uint32_t start = 0;
 uint32_t dt = 0;
@@ -108,7 +116,9 @@ inline bool mqttconn() {
     return succes;
 }
 
+void Timers_PWM_Init();
 meas getMeas();
+void get_out_pack(struct command_pack &package);
 void dhcpLoop();
 
 // MessageHandler
@@ -133,21 +143,17 @@ void CommandHandler(String &topic, String &payload) {
             if (cmd == "start") {
                 Serial.println("1");
 
-                //
-                //
-                //
-                //
-                //
-
                 command_pack res;
 
+                get_out_pack(res);
+
                 JsonArray I = resultJson["I"].to<JsonArray>();
-                for (int i = 0; i < I_POINTS; i++) {
+                for (int i = 0; i < VAC_POINTS; i++) {
                     I.add(res.I[i]);
                 }
 
                 JsonArray V = resultJson["V"].to<JsonArray>();
-                for (int i = 0; i < V_POINTS; i++) {
+                for (int i = 0; i < VAC_POINTS; i++) {
                     V.add(res.V[i]);
                 }
 
@@ -332,6 +338,14 @@ void setup() {
     }
 
     Serial.println("\n INF: MQTT connected ");
+
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, LOW);
+
+    pinMode(pwmPin1, OUTPUT);
+    pinMode(pwmPin2, OUTPUT);
+
+    Timers_PWM_Init();
 }
 
 void loop() {
@@ -581,4 +595,98 @@ float getTemp() {
     sensors.requestTemperatures();
     float T = sensors.getTempCByIndex(0);
     return T;
+}
+
+void Timers_PWM_Init() {
+    // --- Настройка Timer2 (пин 3 = OC2B) ---
+    TCCR2A = 0;
+    TCCR2B = 0;
+    TCCR2A |= (1 << WGM21) | (1 << WGM20); // Fast PWM (8 bit)
+    TCCR2A |= (1 << COM2B1);               // ШИМ на OC2B
+    TCCR2B |= (1 << CS21);                 // предделитель 8 → ~31.25 кГц
+    OCR2B = 0;                             // начальный duty
+
+    // --- Настройка Timer1 (пин 9 = OC1A) ---
+    TCCR1A = 0;
+    TCCR1B = 0;
+    TCCR1A |= (1 << WGM10); // Fast PWM 8-bit
+    TCCR1B |= (1 << WGM12);
+    TCCR1A |= (1 << COM1A1); // ШИМ на OC1A
+    TCCR1B |= (1 << CS11);   // предделитель 8 → ~31.25 кГц
+    OCR1A = 0;               // начальный duty
+}
+
+void get_out_pack(command_pack &package) {
+
+    uint8_t i = 0;
+    uint8_t duty1 = 0;
+    uint8_t duty2 = 0;
+
+    digitalWrite(RELAY_PIN, HIGH);
+
+    while (duty1 < VAC_POINTS || duty2 < VAC_POINTS) {
+
+        float A;
+        float Vo;
+        float V;
+
+        if (duty1 < VAC_POINTS) {
+            duty1 += VAC_STEP;
+            if (duty1 > VAC_POINTS)
+                duty1 = VAC_POINTS;
+            OCR2B = duty1;
+
+            delay(VAC_LAG);
+            // lux_pow_data(&L, &mW);
+            // T = getTemp();
+            A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
+            Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+            V = voltageDivider * Vo;
+
+            if (i < VAC_POINTS) {
+                package.I[i] = A;
+                package.V[i] = V;
+                i++;
+            }
+        }
+
+        if (duty2 < VAC_POINTS) {
+            duty2 += VAC_STEP;
+            if (duty2 > VAC_POINTS)
+                duty2 = VAC_POINTS;
+            OCR1A = duty2;
+
+            delay(VAC_LAG);
+            // lux_pow_data(&L, &mW);
+            // T = getTemp();
+            A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
+            Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+            V = voltageDivider * Vo;
+
+            if (i < VAC_POINTS) {
+                package.I[i] = A;
+                package.V[i] = V;
+                i++;
+            }
+        }
+    }
+
+    // --- Надёжное отключение ШИМ ---
+    /* TCCR2A &= ~((1 << COM2B1) | (1 << COM2B0));  // отключить OC2B
+      TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));  // отключить OC1A
+
+        digitalWrite(pwmPin1, LOW);
+          digitalWrite(pwmPin2, LOW);
+            digitalWrite(RELAY_PIN, LOW);
+              */
+    if (duty1 >= VAC_POINTS && duty2 >= VAC_POINTS) {
+        OCR2B = 0; // сбросить PWM на 3 пине
+        OCR1A = 0; // сбросить PWM на 9 пине
+        digitalWrite(RELAY_PIN, LOW);
+
+        // если нужно "начинать заново" при следующем вызове:
+        duty1 = 0;
+        duty2 = 0;
+        i = 0;
+    }
 }
