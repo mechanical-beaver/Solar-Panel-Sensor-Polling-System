@@ -45,8 +45,6 @@
 #define VAC_POINTS         25 * VAC_STEP
 #define VAC_LAG            500
 
-// #define VAC_POINTS         50
-
 #define R1                 150000.0f
 #define R2                 14960.0f
 
@@ -56,16 +54,8 @@ struct meas {
 };
 
 struct command_pack {
-    float I[VAC_POINTS];
-    float V[VAC_POINTS];
-    // uint16_t YY;
-    // uint8_t MM;
-    // uint8_t DD;
-    // uint8_t HH;
-    // uint8_t MM;
-    // uint8_t SS;
-    // uint8_t MSMS;
-    int16_t sp_number;
+    float I;
+    float V;
 };
 
 const uint8_t pwmPin1 = 3; // OC2B — Timer2
@@ -118,54 +108,79 @@ inline bool mqttconn() {
 
 void Timers_PWM_Init();
 meas getMeas();
-void get_out_pack(struct command_pack &package);
+command_pack get_out_pack(bool dy, uint16_t step);
 void dhcpLoop();
+
+void pub(command_pack package, uint16_t spn, const char* hash)
+{
+    JsonDocument resultJson;
+
+    resultJson["I"] = package.I;
+    resultJson["V"] = package.V;
+    resultJson["sp_number"] = spn;
+    resultJson["hash"] = hash;
+            
+    String output;
+    serializeJson(resultJson, output);
+    Serial.println(output);
+            
+    client.publish("/uni/iv", output.c_str());
+}
 
 // MessageHandler
 void CommandHandler(String &topic, String &payload) {
     char msg[100];
-    sprintf(msg, "Topic: %s; Command: $s", topic.c_str(), payload.c_str());
+    sprintf(msg, "Topic: %s; Command: %s", topic.c_str(), payload.c_str());
+    Serial.println(msg);
 
     JsonDocument request;
-    JsonDocument resultJson;
+
 
     DeserializationError err = deserializeJson(request, payload.c_str());
+    if (err) {
+        Serial.println("ERR: JSON parse failed");
+        return;
+    }
 
     if (!request["sp_number"].is<uint16_t>()) {
-        Serial.println("ERR: Dont correct sp_number");
+        Serial.println("ERR: Incorrect sp_number");
         return;
     }
 
     String cmd = request["command"];
+    uint16_t spn = request["sp_number"];
+    
+    char hash[16];
+    strlcpy(hash, request["hash"] | "", sizeof(hash));
 
-    if (topic == "/device/commands") {
-        if (config["sp_number"] == request["sp_number"]) {
-            if (cmd == "start") {
-                Serial.println("1");
 
-                command_pack res;
+    if (topic == "/device/commands" &&
+        config["sp_number"] == request["sp_number"] &&
+        cmd == "start") 
+    {
+        Serial.println("Start command received");
 
-                get_out_pack(res);
+        digitalWrite(RELAY_PIN, HIGH);
 
-                JsonArray I = resultJson["I"].to<JsonArray>();
-                for (int i = 0; i < VAC_POINTS; i++) {
-                    I.add(res.I[i]);
-                }
+        for(uint16_t i = 1; i < (VAC_POINTS/VAC_STEP)+1; i++)
+        {
+            command_pack res;
 
-                JsonArray V = resultJson["V"].to<JsonArray>();
-                for (int i = 0; i < VAC_POINTS; i++) {
-                    V.add(res.V[i]);
-                }
-
-                resultJson["sp_number"] = request["sp_number"];
-                String output;
-                serializeJson(resultJson, output);
-            }
+            res = get_out_pack(true, i);
+            pub(res, spn, hash);
+            
+            res = get_out_pack(false, i);
+            pub(res, spn, hash);
         }
+
+        OCR2B = 0;
+        OCR1A = 0;
+        digitalWrite(RELAY_PIN, LOW);
     }
 }
 
 void setup() {
+
     Serial.begin(9600);
 
     if (!SD.begin(SD_PIN)) {
@@ -276,17 +291,18 @@ void setup() {
         Serial.println("ERR: Failed to allocate MQTT buffer");
         delay(5000);
     }
-
-    if (!ads1015.begin()) {
+//____________________________________________________________________
+    /*if (!ads1015.begin()) {
         Serial.println(F("ERR: Failed to initialize ADS1115"));
         while (1) {
             delay(1);
         }
     }
-
+    
     lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
     sensors.begin();
-
+    */
+//____________________________________________________________________
     if (dhcpEnable) {
         Serial.println(F("INF: Initialize Ethernet with DHCP"));
         if (!Ethernet.begin(mac, config["dhcp_timeout"].as<uint32_t>(),
@@ -362,9 +378,9 @@ void loop() {
     if (millis() - start >= dt) {
 
         start = millis();
-
-        meas M = getMeas();
-
+//____________________________________________________________________
+        // meas M = getMeas();
+//____________________________________________________________________
         JsonDocument payload;
         payload["sp_number"] = config["sp_number"];
         payload["tem"] = M.T;
@@ -414,7 +430,6 @@ void getConfig() {
     }
 
     Serial.println(content);
-    // DeserializationError err = deserializeJson(config, content);
     DeserializationError err = deserializeJson(config, content);
     if (err) {
         Serial.print(F("ERR: Deserialization failed, "));
@@ -616,77 +631,29 @@ void Timers_PWM_Init() {
     OCR1A = 0;               // начальный duty
 }
 
-void get_out_pack(command_pack &package) {
+command_pack get_out_pack(bool dy, uint16_t step) {
+    command_pack package;
 
-    uint8_t i = 0;
-    uint8_t duty1 = 0;
-    uint8_t duty2 = 0;
+    float A, V0, V;
 
-    digitalWrite(RELAY_PIN, HIGH);
-
-    while (duty1 < VAC_POINTS || duty2 < VAC_POINTS) {
-
-        float A;
-        float Vo;
-        float V;
-
-        if (duty1 < VAC_POINTS) {
-            duty1 += VAC_STEP;
-            if (duty1 > VAC_POINTS)
-                duty1 = VAC_POINTS;
-            OCR2B = duty1;
-
-            delay(VAC_LAG);
-            // lux_pow_data(&L, &mW);
-            // T = getTemp();
-            A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
-            Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
-            V = voltageDivider * Vo;
-
-            if (i < VAC_POINTS) {
-                package.I[i] = A;
-                package.V[i] = V;
-                i++;
-            }
-        }
-
-        if (duty2 < VAC_POINTS) {
-            duty2 += VAC_STEP;
-            if (duty2 > VAC_POINTS)
-                duty2 = VAC_POINTS;
-            OCR1A = duty2;
-
-            delay(VAC_LAG);
-            // lux_pow_data(&L, &mW);
-            // T = getTemp();
-            A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
-            Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
-            V = voltageDivider * Vo;
-
-            if (i < VAC_POINTS) {
-                package.I[i] = A;
-                package.V[i] = V;
-                i++;
-            }
-        }
+    if(dy)
+    {
+        OCR1A = step * VAC_STEP;
     }
-
-    // --- Надёжное отключение ШИМ ---
-    /* TCCR2A &= ~((1 << COM2B1) | (1 << COM2B0));  // отключить OC2B
-      TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));  // отключить OC1A
-
-        digitalWrite(pwmPin1, LOW);
-          digitalWrite(pwmPin2, LOW);
-            digitalWrite(RELAY_PIN, LOW);
-              */
-    if (duty1 >= VAC_POINTS && duty2 >= VAC_POINTS) {
-        OCR2B = 0; // сбросить PWM на 3 пине
-        OCR1A = 0; // сбросить PWM на 9 пине
-        digitalWrite(RELAY_PIN, LOW);
-
-        // если нужно "начинать заново" при следующем вызове:
-        duty1 = 0;
-        duty2 = 0;
-        i = 0;
+    else
+    {
+        OCR2B = step * VAC_LAG;
     }
+    
+
+    delay(VAC_LAG);
+//____________________________________________________________________
+    //A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
+    //Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+    //V  = voltageDivider * Vo;
+
+    // package.I = A;
+    // package.V = V;
+//____________________________________________________________________
+    return package;
 }
