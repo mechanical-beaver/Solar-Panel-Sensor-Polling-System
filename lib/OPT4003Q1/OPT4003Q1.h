@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 28 Aug 2025 14:28:03
+ * Last Update: 28 Aug 2025 14:48:15
  *
  * Description: <EMPTY>
  */
@@ -279,6 +279,14 @@ private:
     uint16_t readx(uint8_t r);
     bool writex(uint8_t r, uint16_t v);
     boolean verifyCrc(uint32_t m, uint8_t e, uint8_t c, uint8_t crc);
+    inline uint8_t parity32(uint32_t v) {
+        v ^= v >> 16;
+        v ^= v >> 8;
+        v ^= v >> 4;
+        v ^= v >> 2;
+        v ^= v >> 1;
+        return (uint8_t)(v & 1u);
+    };
 };
 
 #endif // _OPT4003Q1_H_

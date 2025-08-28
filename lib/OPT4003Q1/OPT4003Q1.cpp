@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 28 Aug 2025 14:28:36
+ * Last Update: 28 Aug 2025 14:49:01
  *
  * Description: <EMPTY>
  */
@@ -108,7 +108,6 @@ double OPT4003Q1::getIR() {
 
     if (_enableCrc && !verifyCrc(m, rh.e, rl.counter, rl.crc)) {
         _errno = OPT4003Q1_ERROR_CRC_FAILED;
-        return 0.0;
     }
 
     return (double)r * 409e-12;
@@ -141,15 +140,6 @@ bool OPT4003Q1::writex(uint8_t r, uint16_t v) {
 #endif
     uint8_t b[] = {r, (uint8_t)(v >> 8), (uint8_t)(v & 0xFF)};
     return _i2c->write(b, sizeof(b));
-}
-
-static inline uint8_t parity32(uint32_t v) {
-    v ^= v >> 16;
-    v ^= v >> 8;
-    v ^= v >> 4;
-    v ^= v >> 2;
-    v ^= v >> 1;
-    return (uint8_t)(v & 1u);
 }
 
 boolean OPT4003Q1::verifyCrc(uint32_t m, uint8_t e, uint8_t c, uint8_t crc) {
