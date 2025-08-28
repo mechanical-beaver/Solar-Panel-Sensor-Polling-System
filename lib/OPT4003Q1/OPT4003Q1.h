@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 21 Aug 2025 00:18:43
+ * Last Update: 28 Aug 2025 05:47:41
  *
  * Description: <EMPTY>
  */
@@ -10,7 +10,6 @@
 #ifndef _OPT4003Q1_H_
 #define _OPT4003Q1_H_
 
-#include "HardwareSerial.h"
 #include <Adafruit_I2CDevice.h>
 #include <Arduino.h>
 
@@ -169,6 +168,15 @@ enum {
     OPT4003Q1_REGISTER_DEVICE_ID_HIGH = 0x11,
 };
 
+enum OPT4003Q1_Error {
+    OPT4003Q1_ERROR_OK = 0,
+    OPT4003Q1_ERROR_I2C_BEGIN_FAILED,
+    OPT4003Q1_ERROR_I2C_WRITE_FAILED,
+    OPT4003Q1_ERROR_NOT_INITIALIZED,
+    OPT4003Q1_ERROR_INVALID_DEVICE_ID,
+    OPT4003Q1_ERROR_CRC_FAILED,
+};
+
 #pragma pack(push, 1)
 union OPT4003Q1_Config {
     struct {
@@ -252,6 +260,8 @@ public:
         return cfg.conversionReadyFlag;
     }
 
+    OPT4003Q1_Error getError() { return _errno; }
+
 private:
     Adafruit_I2CDevice *_i2c = NULL;
 
@@ -259,6 +269,8 @@ private:
 
     uint8_t _addr;
     boolean _enableCrc;
+
+    OPT4003Q1_Error _errno = OPT4003Q1_ERROR_OK;
 
     uint16_t readx(uint8_t r);
     bool writex(uint8_t r, uint16_t v);
