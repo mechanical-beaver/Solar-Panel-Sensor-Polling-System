@@ -1,5 +1,4 @@
 #include <stdint.h>
-// #include <stdio.h>
 #include <stdlib.h>
 
 #include <Arduino.h>
@@ -11,18 +10,19 @@
 #include <Wire.h>
 
 #include <DallasTemperature.h>
-
 #include <Ethernet.h>
 #include <IPAddress.h>
 #include <MQTT.h>
+#include <OPT4003Q1.h>
 #include <SD.h>
 
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_TSL2561_U.h>
 #include <ArduinoJson.h>
-#include <DHT_U.h>
+
 // Lux defs
+#define OPT4003Q1_ADDR     OPT4003Q1_I2C_ADDR_VDD
+
 #define OPT_ADDR           0x45 // Адрес устройства
 #define AH_REG_ADDR        0x0A // Адрес регистра концигурации
 #define REG_RESULT_CH0_MSB 0x00 // CH0
@@ -31,10 +31,7 @@
 #define REG_RESULT_CH1_LSB 0x03 // CH1
 
 #define CONFIG_FILENAME    ("CONFIG.TXT")
-#define DHT_PIN            (0x2)
 #define SD_PIN             (4)
-// #define DHT_TYPE           (DHT22)
-// #define TSL2561_SENSOR_ID  (0x1)
 #define ACS712_PIN         (A0)
 
 #define ONE_WIRE_PIN       2
@@ -43,7 +40,6 @@
 #define R2                 14960.0f
 
 struct meas {
-    // float T, H, L, A, V;
     float T, L, mW, A, V;
 };
 
@@ -62,13 +58,6 @@ Adafruit_ADS1015 ads1015;
 // Temp init
 OneWire oneWire(ONE_WIRE_PIN);
 DallasTemperature sensors(&oneWire);
-
-// Digital Temperature and Humidity sensor
-// DHT_Unified dht(DHT_PIN, DHT_TYPE);
-
-// Luminosity sensor
-// Adafruit_TSL2561_Unified tsl2561 =
-//     Adafruit_TSL2561_Unified(TSL2561_ADDR_LOW, TSL2561_SENSOR_ID);
 
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
@@ -89,8 +78,6 @@ void lux_pow_data(float *Lx, float *Pw);
 // Temp get data
 float getTemp();
 
-float getTemp();
-
 inline bool mqttconn() {
     const char *username = config["mqtt_username"];
     const char *password = config["mqtt_password"];
@@ -100,11 +87,23 @@ inline bool mqttconn() {
 meas getMeas();
 void dhcpLoop();
 
+OPT4003Q1 opt4003q1;
+
 void setup() {
     Serial.begin(9600);
 
     if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
+        while (1) {
+            delay(1);
+        }
+    }
+
+    lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
+    sensors.begin();
+
+    if (opt4003q1.begin(OPT4003Q1_ADDR)) {
+        Serial.println("ERR: OPT4003Q1 initialization failed!");
         while (1) {
             delay(1);
         }
@@ -219,20 +218,6 @@ void setup() {
         }
     }
 
-    // if (!tsl2561.begin()) {
-    //     Serial.println(F("ERR: Failed to initialize TSL2561"));
-    //     while (1) {
-    //         delay(1);
-    //     }
-    // }
-
-    // tsl2561.setGain(TSL2561_GAIN_1X);
-    // tsl2561.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
-
-    // dht.begin();
-    lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
-    sensors.begin();
-
     if (dhcpEnable) {
         Serial.println(F("INF: Initialize Ethernet with DHCP"));
         if (!Ethernet.begin(mac, config["dhcp_timeout"].as<uint32_t>(),
@@ -302,7 +287,6 @@ void loop() {
         payload["sp_number"] = config["sp_number"];
         payload["tem"] = M.T;
         payload["mW"] = M.mW;
-        // payload["hum"] = M.H;
         payload["lux"] = M.L;
         payload["vol"] = M.V;
         payload["cur"] = M.A;
@@ -361,17 +345,6 @@ void getConfig() {
 }
 
 meas getMeas() {
-    // sensors_event_t eT, eH, eL;
-    //
-    // dht.temperature().getEvent(&eT);
-    // float T = eT.temperature;
-    //
-    // dht.humidity().getEvent(&eH);
-    // float H = eH.relative_humidity;
-    //
-    // tsl2561.getEvent(&eL);
-    // float L = eL.light;
-
     // Get Lux and mW/cm^2
     float L, mW = 0.000;
     lux_pow_data(&L, &mW);
