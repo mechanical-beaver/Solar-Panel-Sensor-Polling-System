@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 28 Aug 2025 14:13:20
+ * Last Update: 28 Aug 2025 14:28:36
  *
  * Description: <EMPTY>
  */
@@ -40,17 +40,11 @@ boolean OPT4003Q1::begin(TwoWire *theWire, uint8_t addr) {
 
 boolean OPT4003Q1::begin(uint8_t addr) { return begin(&Wire, addr); }
 
-void OPT4003Q1::enable() {
+void OPT4003Q1::enable(OPT4003Q1_Config cfg) {
     if (!_initialized) {
         _errno = OPT4003Q1_ERROR_NOT_INITIALIZED;
         return;
     }
-
-    // TODO: Pass as arguments or in constructor
-    OPT4003Q1_Config cfg = {
-        {OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW, OPT4003Q1_LATCHED_MODE,
-         OPT4003Q1_FORCED_ONESHOT_MODE, OPT4003Q1_CONVERSION_TIME_8,
-         OPT4003Q1_RANGE_AUTO, OPT4003Q1_QWAKE_ENABLE}};
 
     if (writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw)) {
         _errno = OPT4003Q1_ERROR_I2C_WRITE_FAILED;

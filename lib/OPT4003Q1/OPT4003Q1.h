@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 28 Aug 2025 05:47:41
+ * Last Update: 28 Aug 2025 14:28:03
  *
  * Description: <EMPTY>
  */
@@ -248,7 +248,11 @@ public:
     boolean begin(uint8_t addr = OPT4003Q1_I2C_ADDR);
 
     void disable();
-    void enable();
+    void enable(OPT4003Q1_Config cfg = {
+                    {OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW,
+                     OPT4003Q1_LATCHED_MODE, OPT4003Q1_FORCED_ONESHOT_MODE,
+                     OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
+                     OPT4003Q1_QWAKE_ENABLE}});
 
     float getALS();
     double getIR();
