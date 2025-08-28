@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 28 Aug 2025 14:49:01
+ * Last Update: 29 Aug 2025 00:32:19
  *
  * Description: <EMPTY>
  */
@@ -46,7 +46,7 @@ void OPT4003Q1::enable(OPT4003Q1_Config cfg) {
         return;
     }
 
-    if (writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw)) {
+    if (!writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw)) {
         _errno = OPT4003Q1_ERROR_I2C_WRITE_FAILED;
         return;
     }
@@ -64,7 +64,7 @@ void OPT4003Q1::disable() {
     cfg.operatingMode = OPT4003Q1_POWER_DOWN_MODE;
     cfg.qwake = OPT4003Q1_QWAKE_ENABLE;
 
-    if (writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw)) {
+    if (!writex(OPT4003Q1_REGISTER_CONFIG_A, cfg.raw)) {
         _errno = OPT4003Q1_ERROR_I2C_WRITE_FAILED;
         return;
     }

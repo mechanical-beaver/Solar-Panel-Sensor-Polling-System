@@ -26,8 +26,12 @@
 #define CONFIG_FILENAME    ("CONFIG.TXT")
 #define SD_PIN             (4)
 #define ACS712_PIN         (A0)
-
+#define RELAY_PIN          10
 #define ONE_WIRE_PIN       2
+
+#define VAC_STEP           2
+#define VAC_POINTS         25 * VAC_STEP
+#define VAC_LAG            500
 
 #define R1                 150000.0f
 #define R2                 14960.0f
@@ -37,10 +41,21 @@ struct meas {
     double IR;
 };
 
+struct command_pack {
+    float I;
+    float V;
+};
+
+const uint8_t pwmPin1 = 3; // OC2B — Timer2
+const uint8_t pwmPin2 = 9; // OC1A — Timer1
+
 uint32_t start = 0;
 uint32_t dt = 0;
 // TODO: Rewrite as singleton
 char *mqttbuf;
+
+// Configuration
+const JsonDocument &getConfig();
 
 // Voltmeter
 constexpr float voltageDivider = (R1 + R2) / R2;
@@ -57,22 +72,28 @@ OPT4003Q1 opt4003q1;
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = {0x00, 0xb0, 0x5a, 0x85, 0x6b, 0x00};
 
-JsonDocument config;
-
 // Networking
 EthernetClient net = {};
 MQTTClient client;
 
-void getConfig();
-
 inline bool mqttconn() {
-    const char *username = config["mqtt_username"];
-    const char *password = config["mqtt_password"];
-    return client.connect("", username, password);
+    const auto &config = getConfig();
+    const char *username = config["mqtt_username"].as<const char *>();
+    const char *password = config["mqtt_password"].as<const char *>();
+    bool succes = client.connect("", username, password);
+
+    client.subscribe("/device/commands");
+
+    return succes;
 }
 
-meas getMeas();
 void dhcpLoop();
+meas getMeas();
+// TODO: Refactoring
+void Timers_PWM_Init();
+command_pack get_out_pack(bool dy, uint16_t step);
+void CommandHandler(String &topic, String &payload);
+void pub(command_pack package, uint16_t spn, const char *hash);
 
 void setup() {
     Serial.begin(9600);
@@ -84,17 +105,16 @@ void setup() {
         }
     }
 
-    opt4003q1.begin();
     ds18b20.begin();
 
-    if (opt4003q1.begin(OPT4003Q1_I2C_ADDR)) {
+    if (!opt4003q1.begin(OPT4003Q1_I2C_ADDR)) {
         Serial.println("ERR: OPT4003Q1 initialization failed!");
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
-    getConfig();
+    const auto &config = getConfig();
 
     Serial.println("INF: Check `mqtt_ip`");
     while (!config["mqtt_ip"].is<const char *>()) {
@@ -187,19 +207,24 @@ void setup() {
         delay(5000);
     }
 
-    dt = config["delta_time"];
+    // Initialize delta time
+    dt = config["delta_time"].as<uint32_t>();
 
+    // Initialize MQTT buffer
     Serial.println("INF: Allocate MQTT buffer");
     mqttbuf = (char *)malloc(config["mqtt_buffer_size"].as<size_t>());
-    while (!mqttbuf) {
+    if (!mqttbuf) {
         Serial.println("ERR: Failed to allocate MQTT buffer");
-        delay(5000);
+        while (1) {
+            delay(5000);
+        }
     }
 
+    // Initialize sensors and networking
     if (!ads1015.begin()) {
         Serial.println(F("ERR: Failed to initialize ADS1115"));
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
@@ -232,22 +257,36 @@ void setup() {
         Ethernet.begin(mac, ip, dns, gateway, subnet);
     }
 
-    // print your local IP address:
+    // Print your local IP
+    Serial.print(F("INF: My IP address "));
+    Serial.println(Ethernet.localIP());
+
     IPAddress mqttip = {};
     mqttip.fromString(config["mqtt_ip"].as<const char *>());
     uint16_t mqttport = config["mqtt_port"].as<uint16_t>();
-    Serial.print(F("INF: My IP address "));
-    Serial.println(Ethernet.localIP());
     Serial.print(F("INF: MQTT connecting "));
     Serial.print(mqttip);
     Serial.print(F(":"));
     Serial.print(mqttport);
     // TODO: Error handling
     client.begin(mqttip, (int)mqttport, net);
+
+    client.onMessage(CommandHandler);
+
     while (!mqttconn()) {
         Serial.print(F("."));
         delay(1000);
     }
+
+    Serial.println("\n INF: MQTT connected ");
+
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, LOW);
+
+    pinMode(pwmPin1, OUTPUT);
+    pinMode(pwmPin2, OUTPUT);
+
+    Timers_PWM_Init();
 }
 
 void loop() {
@@ -263,12 +302,14 @@ void loop() {
 
     if (millis() - start >= dt) {
 
+        const auto &config = getConfig();
+
         start = millis();
 
         meas M = getMeas();
 
         JsonDocument payload;
-        payload["sp_number"] = config["sp_number"];
+        payload["sp_number"] = config["sp_number"].as<uint16_t>();
         payload["tem"] = M.T;
         payload["mW"] = M.IR;
         payload["lux"] = M.L;
@@ -287,12 +328,18 @@ void loop() {
     }
 }
 
-void getConfig() {
+const JsonDocument &getConfig() {
+    static JsonDocument config;
+
+    if (!config.isNull()) {
+        return config;
+    }
+
     Serial.println(F("INF: Reading config file..."));
     if (!SD.exists(CONFIG_FILENAME)) {
         Serial.println(F("ERR: Can't find config file"));
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
@@ -302,7 +349,7 @@ void getConfig() {
     if (!content) {
         Serial.println(F("ERR: Failed to allocate memory"));
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
@@ -311,7 +358,7 @@ void getConfig() {
     if (cfg.read(content, sz) == -1) {
         Serial.println(F("ERR: Failed to read config file."));
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
@@ -321,17 +368,25 @@ void getConfig() {
         Serial.print(F("ERR: Deserialization failed, "));
         Serial.println(err.f_str());
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
     free(content);
+
+    return config;
 }
 
 meas getMeas() {
     OPT4003Q1_Light light = {};
 
     while (true) {
+        opt4003q1.enable();
+
+        do {
+            delay(100); // TODO: Check this later
+        } while (!opt4003q1.isReady());
+
         light.lux = opt4003q1.getALS();
         light.ir = opt4003q1.getIR();
 
@@ -339,7 +394,7 @@ meas getMeas() {
             break;
         }
 
-        Serial.println("err: failed to read light data, retrying...");
+        Serial.println("ERR: failed to read light data, retrying...");
         opt4003q1.resetError();
     }
 
@@ -385,4 +440,104 @@ void dhcpLoop() {
         // nothing happened
         break;
     }
+}
+
+void pub(command_pack package, uint16_t spn, const char *hash) {
+    JsonDocument resultJson;
+
+    resultJson["I"] = package.I;
+    resultJson["V"] = package.V;
+    resultJson["sp_number"] = spn;
+    resultJson["hash"] = hash;
+
+    String output;
+    serializeJson(resultJson, output);
+    Serial.println(output);
+
+    client.publish("/uni/iv", output.c_str());
+}
+
+// MessageHandler
+void CommandHandler(String &topic, String &payload) {
+    char msg[100];
+    sprintf(msg, "Topic: %s; Command: %s", topic.c_str(), payload.c_str());
+    Serial.println(msg);
+
+    JsonDocument request;
+
+    DeserializationError err = deserializeJson(request, payload.c_str());
+    if (err) {
+        Serial.println("ERR: JSON parse failed");
+        return;
+    }
+
+    if (!request["sp_number"].is<uint16_t>()) {
+        Serial.println("ERR: Incorrect sp_number");
+        return;
+    }
+
+    String cmd = request["command"];
+    uint16_t spn = request["sp_number"];
+
+    char hash[16];
+    strlcpy(hash, request["hash"] | "", sizeof(hash));
+
+    const auto &config = getConfig();
+
+    if (topic == "/device/commands" &&
+        config["sp_number"].as<uint16_t>() == request["sp_number"] &&
+        cmd == "start") {
+        Serial.println("Start command received");
+
+        digitalWrite(RELAY_PIN, HIGH);
+
+        for (uint16_t i = 1; i < (VAC_POINTS / VAC_STEP) + 1; i++) {
+            command_pack res;
+
+            res = get_out_pack(true, i);
+            pub(res, spn, hash);
+
+            res = get_out_pack(false, i);
+            pub(res, spn, hash);
+        }
+
+        OCR2B = 0;
+        OCR1A = 0;
+        digitalWrite(RELAY_PIN, LOW);
+    }
+}
+
+void Timers_PWM_Init() {
+    // --- Настройка Timer2 (пин 3 = OC2B) ---
+    TCCR2A = 0;
+    TCCR2B = 0;
+    TCCR2A |= (1 << WGM21) | (1 << WGM20); // Fast PWM (8 bit)
+    TCCR2A |= (1 << COM2B1);               // ШИМ на OC2B
+    TCCR2B |= (1 << CS21);                 // предделитель 8 → ~31.25 кГц
+    OCR2B = 0;                             // начальный duty
+
+    // --- Настройка Timer1 (пин 9 = OC1A) ---
+    TCCR1A = 0;
+    TCCR1B = 0;
+    TCCR1A |= (1 << WGM10); // Fast PWM 8-bit
+    TCCR1B |= (1 << WGM12);
+    TCCR1A |= (1 << COM1A1); // ШИМ на OC1A
+    TCCR1B |= (1 << CS11);   // предделитель 8 → ~31.25 кГц
+    OCR1A = 0;               // начальный duty
+}
+
+command_pack get_out_pack(bool dy, uint16_t step) {
+    if (dy) {
+        OCR1A = step * VAC_STEP;
+    } else {
+        OCR2B = step * VAC_LAG;
+    }
+
+    delay(VAC_LAG);
+
+    float A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
+    float Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
+    float V = voltageDivider * Vo;
+
+    return command_pack{A, V};
 }
