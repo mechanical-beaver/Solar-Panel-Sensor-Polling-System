@@ -20,15 +20,8 @@
 #include <Adafruit_Sensor.h>
 #include <ArduinoJson.h>
 
-// Lux defs
-#define OPT4003Q1_ADDR     OPT4003Q1_I2C_ADDR_VDD
-
-#define OPT_ADDR           0x45 // Адрес устройства
-#define AH_REG_ADDR        0x0A // Адрес регистра концигурации
-#define REG_RESULT_CH0_MSB 0x00 // CH0
-#define REG_RESULT_CH0_LSB 0x01 // CH0
-#define REG_RESULT_CH1_MSB 0x02 // CH1
-#define REG_RESULT_CH1_LSB 0x03 // CH1
+#undef OPT4003Q1_I2C_ADDR
+#define OPT4003Q1_I2C_ADDR OPT4003Q1_I2C_ADDR_VDD
 
 #define CONFIG_FILENAME    ("CONFIG.TXT")
 #define SD_PIN             (4)
@@ -40,24 +33,25 @@
 #define R2                 14960.0f
 
 struct meas {
-    float T, L, mW, A, V;
+    float T, L, A, V;
+    double IR;
 };
 
 uint32_t start = 0;
 uint32_t dt = 0;
+// TODO: Rewrite as singleton
 char *mqttbuf;
 
-// Code configuration regitr
-const uint16_t AH_REG_CONFIG = 0x32B4;
-
-constexpr float voltageDivider = (R1 + R2) / R2;
-
 // Voltmeter
+constexpr float voltageDivider = (R1 + R2) / R2;
 Adafruit_ADS1015 ads1015;
 
-// Temp init
+// Temperature
 OneWire oneWire(ONE_WIRE_PIN);
-DallasTemperature sensors(&oneWire);
+DallasTemperature ds18b20(&oneWire);
+
+// Luxometer
+OPT4003Q1 opt4003q1;
 
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
@@ -71,13 +65,6 @@ MQTTClient client;
 
 void getConfig();
 
-// Lux init func
-void lux_power_init(int addr, int addr_reg, int conf);
-// Lux get data
-void lux_pow_data(float *Lx, float *Pw);
-// Temp get data
-float getTemp();
-
 inline bool mqttconn() {
     const char *username = config["mqtt_username"];
     const char *password = config["mqtt_password"];
@@ -87,22 +74,20 @@ inline bool mqttconn() {
 meas getMeas();
 void dhcpLoop();
 
-OPT4003Q1 opt4003q1;
-
 void setup() {
     Serial.begin(9600);
 
     if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
         while (1) {
-            delay(1);
+            delay(5000);
         }
     }
 
-    lux_power_init(OPT_ADDR, AH_REG_ADDR, AH_REG_CONFIG);
-    sensors.begin();
+    opt4003q1.begin();
+    ds18b20.begin();
 
-    if (opt4003q1.begin(OPT4003Q1_ADDR)) {
+    if (opt4003q1.begin(OPT4003Q1_I2C_ADDR)) {
         Serial.println("ERR: OPT4003Q1 initialization failed!");
         while (1) {
             delay(1);
@@ -229,7 +214,6 @@ void setup() {
                 Serial.println(F("ERR: Ethernet cable is not connected."));
             }
 
-            // no point in carrying on, so do nothing forevermore:
             while (1) {
                 delay(5000);
             }
@@ -286,7 +270,7 @@ void loop() {
         JsonDocument payload;
         payload["sp_number"] = config["sp_number"];
         payload["tem"] = M.T;
-        payload["mW"] = M.mW;
+        payload["mW"] = M.IR;
         payload["lux"] = M.L;
         payload["vol"] = M.V;
         payload["cur"] = M.A;
@@ -345,17 +329,28 @@ void getConfig() {
 }
 
 meas getMeas() {
-    // Get Lux and mW/cm^2
-    float L, mW = 0.000;
-    lux_pow_data(&L, &mW);
+    OPT4003Q1_Light light = {};
 
-    float T = getTemp();
+    while (true) {
+        light.lux = opt4003q1.getALS();
+        light.ir = opt4003q1.getIR();
+
+        if (opt4003q1.getError() == OPT4003Q1_ERROR_OK) {
+            break;
+        }
+
+        Serial.println("err: failed to read light data, retrying...");
+        opt4003q1.resetError();
+    }
+
+    ds18b20.requestTemperatures();
+    float T = ds18b20.getTempCByIndex(0);
 
     float A = -0.04859 * analogRead(ACS712_PIN) + 24.78;
     float Vo = (float)ads1015.readADC_SingleEnded(0) * 3.0f / 1000.0f;
     float V = voltageDivider * Vo;
 
-    return {T, L, mW, A, V};
+    return {T, light.lux, A, V, light.ir};
 }
 
 void dhcpLoop() {
@@ -390,125 +385,4 @@ void dhcpLoop() {
         // nothing happened
         break;
     }
-}
-
-// Инициализация OPT4003
-void lux_power_init(int addr, int addr_reg, int conf) {
-
-    Wire.begin();
-
-    // Начинаем общение с датчиком
-    Wire.beginTransmission(addr);
-
-    // Передаем адрес регистра
-    Wire.write(addr_reg);
-
-    // Передаем данные в регистр
-    // Передаем 16-битные данные (разделенные на 2 байта)
-    Wire.write(highByte(conf));
-    Wire.write(lowByte(conf));
-
-    // Завершаем передачу
-    Wire.endTransmission();
-}
-
-// Считывание данных с датчика
-/********************************************************/
-void lux_pow_data(float *Lx, float *Pw) {
-
-    uint16_t reg_ch0_msb = 0;
-    uint16_t reg_ch0_lsb = 0;
-    uint16_t reg_ch1_msb = 0;
-    uint16_t reg_ch1_lsb = 0;
-
-    // Reg00
-    Wire.beginTransmission(OPT_ADDR);
-    Wire.write(REG_RESULT_CH0_MSB);
-    Wire.endTransmission(false);
-
-    Wire.requestFrom(OPT_ADDR, /* (uint8_t) */ 2);
-    if (Wire.available() == 2) {
-        uint8_t msb = Wire.read();
-        uint8_t lsb = Wire.read();
-        reg_ch0_msb = ((uint16_t)msb << 8) | lsb;
-    } else {
-        Serial.println("Ошибка чтения регистра 00");
-    }
-
-    // Reg01
-
-    Wire.beginTransmission(OPT_ADDR);
-    Wire.write(REG_RESULT_CH0_LSB);
-    Wire.endTransmission(false);
-
-    Wire.requestFrom(OPT_ADDR, /* (uint8_t) */ 2);
-    if (Wire.available() == 2) {
-        uint8_t msb = Wire.read();
-        uint8_t lsb = Wire.read();
-        reg_ch0_lsb = ((uint16_t)msb << 8) | lsb;
-    } else {
-        Serial.println("Ошибка чтения регистра 01");
-    }
-
-    // Reg02
-
-    Wire.beginTransmission(OPT_ADDR);
-    Wire.write(REG_RESULT_CH1_MSB);
-    Wire.endTransmission(false);
-
-    Wire.requestFrom(OPT_ADDR, /* (uint8_t) */ 2);
-    if (Wire.available() == 2) {
-        uint8_t msb = Wire.read();
-        uint8_t lsb = Wire.read();
-        reg_ch1_msb = ((uint16_t)msb << 8) | lsb;
-    } else {
-        Serial.println("Ошибка чтения регистра 02");
-    }
-
-    // Reg03
-
-    Wire.beginTransmission(OPT_ADDR);
-    Wire.write(REG_RESULT_CH1_LSB);
-    Wire.endTransmission(false);
-
-    Wire.requestFrom(OPT_ADDR, /* (uint8_t) */ 2);
-    if (Wire.available() == 2) {
-        uint8_t msb = Wire.read();
-        uint8_t lsb = Wire.read();
-        reg_ch1_lsb = ((uint16_t)msb << 8) | lsb;
-    } else {
-        Serial.println("Ошибка чтения регистра 03");
-    }
-
-    /******************** Извлечение данных для LUX ********************/
-
-    uint8_t exponentta = (reg_ch0_msb >> 12) & 0xF;
-    uint32_t result_msb = reg_ch0_msb & 0x0FFF;      // 12 бит
-    uint16_t result_lsb = (reg_ch0_lsb >> 8) & 0xFF; // 8 бит
-    uint32_t mantissa = (result_msb << 8) | result_lsb;
-
-    // Делаем ADC_CODE
-    uint32_t ADC_CODE = (mantissa << exponentta);
-
-    // Формула из даташита для корпуса USON:
-    *Lx = (float)ADC_CODE * 0.000535;
-
-    /******************** Извлечения данных для mW/cm^2 ********************/
-
-    exponentta = (reg_ch1_msb >> 12) & 0xF;
-    result_msb = reg_ch1_msb & 0x0FFF;      // 12 бит
-    result_lsb = (reg_ch1_lsb >> 8) & 0xFF; // 8 бит
-    mantissa = (result_msb << 8) | result_lsb;
-
-    // Делаем ADC_CODE
-    ADC_CODE = (mantissa << exponentta);
-
-    // Формула из даташита для корпуса USON:
-    *Pw = (float)ADC_CODE * 0.000535;
-}
-
-float getTemp() {
-    sensors.requestTemperatures();
-    float T = sensors.getTempCByIndex(0);
-    return T;
 }

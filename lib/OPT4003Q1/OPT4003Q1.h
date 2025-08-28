@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 28 Aug 2025 14:48:15
+ * Last Update: 28 Aug 2025 16:08:26
  *
  * Description: <EMPTY>
  */
@@ -265,6 +265,7 @@ public:
     }
 
     OPT4003Q1_Error getError() { return _errno; }
+    void resetError() { _errno = OPT4003Q1_ERROR_OK; }
 
 private:
     Adafruit_I2CDevice *_i2c = NULL;
