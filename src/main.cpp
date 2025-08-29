@@ -31,7 +31,7 @@
 
 #define VAC_STEP           2
 #define VAC_POINTS         25 * VAC_STEP
-#define VAC_LAG            500
+#define VAC_LAG            100
 
 #define R1                 150000.0f
 #define R2                 14960.0f
@@ -97,6 +97,8 @@ void pub(command_pack package, uint16_t spn, const char *hash);
 
 void setup() {
     Serial.begin(9600);
+
+    Serial.println("INF: Serial initialized");
 
     if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
@@ -530,7 +532,7 @@ command_pack get_out_pack(bool dy, uint16_t step) {
     if (dy) {
         OCR1A = step * VAC_STEP;
     } else {
-        OCR2B = step * VAC_LAG;
+        OCR2B = step * VAC_STEP;
     }
 
     delay(VAC_LAG);
