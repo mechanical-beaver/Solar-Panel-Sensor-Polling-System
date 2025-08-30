@@ -1,0 +1,17 @@
+# Example of configuration stored on SD card
+{
+    "eth_static_ip": "192.168.1.2",
+    "eth_dns": "192.168.1.1",
+    "eth_gateway": "192.168.1.1",
+    "eth_subnet": "255.255.252.0",
+    "mqtt_host": "192.168.1.3",
+    "mqtt_username": "user",
+    "mqtt_password": "passwd",
+    "mqtt_topic": "/uni/sp",
+    "mqtt_buffer_size": 102
+    "dhcp_enable": false,
+    "dhcp_timeout": 5000,
+    "dhcp_response_timeout": 5000,
+    "delta_time": 5000,
+    "sp_number": 0
+}
