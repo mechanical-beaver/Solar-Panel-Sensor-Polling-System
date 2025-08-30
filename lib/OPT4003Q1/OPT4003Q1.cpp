@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 29 Aug 2025 00:32:19
+ * Last Update: 30 Aug 2025 14:07:44
  *
  * Description: <EMPTY>
  */
@@ -89,6 +89,7 @@ float OPT4003Q1::getALS() {
         return 0.0f;
     }
 
+    // TODO: Check this, 35903.21000000001 is limit
     return (double)r * 535e-6;
 }
 

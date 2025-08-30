@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 28 Aug 2025 16:08:26
+ * Last Update: 30 Aug 2025 14:05:39
  *
  * Description: <EMPTY>
  */
@@ -251,7 +251,7 @@ public:
     void enable(OPT4003Q1_Config cfg = {
                     {OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW,
                      OPT4003Q1_LATCHED_MODE, OPT4003Q1_FORCED_ONESHOT_MODE,
-                     OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
+                     OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_8,
                      OPT4003Q1_QWAKE_ENABLE}});
 
     float getALS();

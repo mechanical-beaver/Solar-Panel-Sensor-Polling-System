@@ -26,15 +26,15 @@
 #define CONFIG_FILENAME    ("CONFIG.TXT")
 #define SD_PIN             (4)
 #define ACS712_PIN         (A0)
-#define RELAY_PIN          10
-#define ONE_WIRE_PIN       2
+#define RELAY_PIN          (7)
+#define ONE_WIRE_PIN       (2)
 
-#define VAC_STEP           2
-#define VAC_POINTS         25 * VAC_STEP
-#define VAC_LAG            100
+#define VAC_STEP           (2)
+#define VAC_POINTS         (25 * VAC_STEP)
+#define VAC_LAG            (100)
 
-#define R1                 150000.0f
-#define R2                 14960.0f
+#define R1                 (150000.0f)
+#define R2                 (14960.0f)
 
 struct meas {
     float T, L, A, V;
