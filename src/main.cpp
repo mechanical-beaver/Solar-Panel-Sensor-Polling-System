@@ -203,9 +203,9 @@ void setup() {
         delay(5000);
     }
 
-    Serial.println("INF: Check `sp_number`");
-    while (!config["sp_number"].is<uint32_t>()) {
-        Serial.println("ERR: `sp_number` not found");
+    Serial.println("INF: Check `device_uuid`");
+    while (!config["device_uuid"].is<const char *>()) {
+        Serial.println("ERR: `device_uuid` not found");
         delay(5000);
     }
 
@@ -311,9 +311,9 @@ void loop() {
         meas M = getMeas();
 
         JsonDocument payload;
-        payload["sp_number"] = config["sp_number"].as<uint16_t>();
+        payload["device_uuid"] = config["device_uuid"].as<const char *>();
         payload["tem"] = M.T;
-        payload["mW"] = M.IR;
+        payload["ir"] = M.IR;
         payload["lux"] = M.L;
         payload["vol"] = M.V;
         payload["cur"] = M.A;
