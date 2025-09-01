@@ -23,7 +23,7 @@
 #undef OPT4003Q1_I2C_ADDR
 #define OPT4003Q1_I2C_ADDR OPT4003Q1_I2C_ADDR_VDD
 
-#define CONFIG_FILENAME    ("CONFIG.TXT")
+#define CONFIG_FILENAME    (F("CONFIG.TXT"))
 #define SD_PIN             (4)
 #define ACS712_PIN         (A0)
 #define RELAY_PIN          (7)
@@ -74,7 +74,8 @@ byte mac[] = {0x00, 0xb0, 0x5a, 0x85, 0x6b, 0x00};
 
 // Networking
 EthernetClient net = {};
-MQTTClient client;
+// TODO: Use config?
+MQTTClient client(1024);
 
 inline bool mqttconn() {
     const auto &config = getConfig();
@@ -82,7 +83,7 @@ inline bool mqttconn() {
     const char *password = config["mqtt_password"].as<const char *>();
     bool succes = client.connect("", username, password);
 
-    client.subscribe("/device/commands");
+    client.subscribe(F("/device/command"));
 
     return succes;
 }
@@ -93,12 +94,12 @@ meas getMeas();
 void Timers_PWM_Init();
 command_pack get_out_pack(bool dy, uint16_t step);
 void CommandHandler(String &topic, String &payload);
-void pub(command_pack package, uint16_t spn, const char *hash);
+void pub(command_pack package, const String &iv_char_uuid);
 
 void setup() {
     Serial.begin(9600);
 
-    Serial.println("INF: Serial initialized");
+    Serial.println(F("INF: Serial initialized"));
 
     if (!SD.begin(SD_PIN)) {
         Serial.println(F("ERR: SD card initialization failed!"));
@@ -110,7 +111,7 @@ void setup() {
     ds18b20.begin();
 
     if (!opt4003q1.begin(OPT4003Q1_I2C_ADDR)) {
-        Serial.println("ERR: OPT4003Q1 initialization failed!");
+        Serial.println(F("ERR: OPT4003Q1 initialization failed!"));
         while (1) {
             delay(5000);
         }
@@ -118,94 +119,94 @@ void setup() {
 
     const auto &config = getConfig();
 
-    Serial.println("INF: Check `mqtt_ip`");
+    Serial.println(F("INF: Check `mqtt_ip`"));
     while (!config["mqtt_ip"].is<const char *>()) {
-        Serial.println("ERR: `mqtt_ip` not found");
+        Serial.println(F("ERR: `mqtt_ip` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `mqtt_port`");
+    Serial.println(F("INF: Check `mqtt_port`"));
     while (!config["mqtt_port"].is<uint16_t>()) {
-        Serial.println("ERR: `mqtt_port` not found");
+        Serial.println(F("ERR: `mqtt_port` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `mqtt_username`");
+    Serial.println(F("INF: Check `mqtt_username`"));
     while (!config["mqtt_username"].is<const char *>()) {
-        Serial.println("ERR: `mqtt_username` not found");
+        Serial.println(F("ERR: `mqtt_username` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `mqtt_password`");
+    Serial.println(F("INF: Check `mqtt_password`"));
     while (!config["mqtt_password"].is<const char *>()) {
-        Serial.println("ERR: `mqtt_password` not found");
+        Serial.println(F("ERR: `mqtt_password` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `mqtt_topic`");
+    Serial.println(F("INF: Check `mqtt_topic`"));
     while (!config["mqtt_topic"].is<const char *>()) {
-        Serial.println("ERR: `mqtt_topic` not found");
+        Serial.println(F("ERR: `mqtt_topic` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `mqtt_buffer_size`");
+    Serial.println(F("INF: Check `mqtt_buffer_size`"));
     while (!config["mqtt_buffer_size"].is<uint32_t>()) {
-        Serial.println("ERR: `mqtt_buffer_size` not found");
+        Serial.println(F("ERR: `mqtt_buffer_size` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `dhcp_enable`");
+    Serial.println(F("INF: Check `dhcp_enable`"));
     bool dhcpEnable = config["dhcp_enable"].is<bool>() && config["dhcp_enable"];
-    Serial.print("INF: DHCP Client State: ");
-    Serial.println(dhcpEnable ? "ENABLE" : "DISABLE");
+    Serial.print(F("INF: DHCP Client State: "));
+    Serial.println(dhcpEnable ? F("ENABLE") : F("DISABLE"));
 
     if (dhcpEnable) {
-        Serial.println("INF: Check `dhcp_timeout`");
+        Serial.println(F("INF: Check `dhcp_timeout`"));
         while (!config["dhcp_timeout"].is<uint32_t>()) {
-            Serial.println("ERR: `dhcp_timeout` not found");
+            Serial.println(F("ERR: `dhcp_timeout` not found"));
             delay(5000);
         }
 
-        Serial.println("INF: Check `dhcp_response_timeout`");
+        Serial.println(F("INF: Check `dhcp_response_timeout`"));
         while (!config["dhcp_response_timeout"].is<uint32_t>()) {
-            Serial.println("ERR: `dhcp_response_timeout` not found");
+            Serial.println(F("ERR: `dhcp_response_timeout` not found"));
             delay(5000);
         }
     } else {
-        Serial.println("INF: Check `eth_static_ip`");
+        Serial.println(F("INF: Check `eth_static_ip`"));
         while (!config["eth_static_ip"].is<const char *>()) {
-            Serial.println("ERR: `eth_static_ip` not found");
+            Serial.println(F("ERR: `eth_static_ip` not found"));
             delay(5000);
         }
 
-        Serial.println("INF: Check `eth_dns`");
+        Serial.println(F("INF: Check `eth_dns`"));
         while (!config["eth_dns"].is<const char *>()) {
-            Serial.println("ERR: `eth_dns` not found");
+            Serial.println(F("ERR: `eth_dns` not found"));
             delay(5000);
         }
 
-        Serial.println("INF: Check `eth_gateway`");
+        Serial.println(F("INF: Check `eth_gateway`"));
         while (!config["eth_gateway"].is<const char *>()) {
-            Serial.println("ERR: `eth_gateway` not found");
+            Serial.println(F("ERR: `eth_gateway` not found"));
             delay(5000);
         }
 
-        Serial.println("INF: Check `eth_subnet`");
+        Serial.println(F("INF: Check `eth_subnet`"));
         while (!config["eth_subnet"].is<const char *>()) {
-            Serial.println("ERR: `eth_subnet` not found");
+            Serial.println(F("ERR: `eth_subnet` not found"));
             delay(5000);
         }
     }
 
-    Serial.println("INF: Check `delta_time`");
+    Serial.println(F("INF: Check `delta_time`"));
     while (!config["delta_time"].is<uint32_t>()) {
-        Serial.println("ERR: `delta_time` not found");
+        Serial.println(F("ERR: `delta_time` not found"));
         delay(5000);
     }
 
-    Serial.println("INF: Check `device_uuid`");
+    Serial.println(F("INF: Check `device_uuid`"));
     while (!config["device_uuid"].is<const char *>()) {
-        Serial.println("ERR: `device_uuid` not found");
+        Serial.println(F("ERR: `device_uuid` not found"));
         delay(5000);
     }
 
@@ -213,10 +214,10 @@ void setup() {
     dt = config["delta_time"].as<uint32_t>();
 
     // Initialize MQTT buffer
-    Serial.println("INF: Allocate MQTT buffer");
+    Serial.println(F("INF: Allocate MQTT buffer"));
     mqttbuf = (char *)malloc(config["mqtt_buffer_size"].as<size_t>());
     if (!mqttbuf) {
-        Serial.println("ERR: Failed to allocate MQTT buffer");
+        Serial.println(F("ERR: Failed to allocate MQTT buffer"));
         while (1) {
             delay(5000);
         }
@@ -246,7 +247,7 @@ void setup() {
             }
         }
     } else {
-        Serial.println("INF: Initialize Ethernet with static IP");
+        Serial.println(F("INF: Initialize Ethernet with static IP"));
         IPAddress ip = {};
         IPAddress dns = {};
         IPAddress gateway = {};
@@ -280,7 +281,7 @@ void setup() {
         delay(1000);
     }
 
-    Serial.println("\n INF: MQTT connected ");
+    Serial.println("\nINF: MQTT connected ");
 
     pinMode(RELAY_PIN, OUTPUT);
     digitalWrite(RELAY_PIN, LOW);
@@ -295,7 +296,7 @@ void loop() {
     client.loop();
 
     if (!client.connected()) {
-        Serial.println("INF: MQTT reconnecting");
+        Serial.println(F("INF: MQTT reconnecting"));
         while (!mqttconn()) {
             Serial.print(F("."));
             delay(1000);
@@ -396,7 +397,7 @@ meas getMeas() {
             break;
         }
 
-        Serial.println("ERR: failed to read light data, retrying...");
+        Serial.println(F("ERR: failed to read light data, retrying..."));
         opt4003q1.resetError();
     }
 
@@ -444,52 +445,56 @@ void dhcpLoop() {
     }
 }
 
-void pub(command_pack package, uint16_t spn, const char *hash) {
-    JsonDocument resultJson;
-
-    resultJson["I"] = package.I;
-    resultJson["V"] = package.V;
-    resultJson["sp_number"] = spn;
-    resultJson["hash"] = hash;
-
-    String output;
-    serializeJson(resultJson, output);
-    Serial.println(output);
-
-    client.publish("/uni/iv", output.c_str());
-}
-
 // MessageHandler
 void CommandHandler(String &topic, String &payload) {
-    char msg[100];
-    sprintf(msg, "Topic: %s; Command: %s", topic.c_str(), payload.c_str());
-    Serial.println(msg);
-
     JsonDocument request;
 
     DeserializationError err = deserializeJson(request, payload.c_str());
     if (err) {
-        Serial.println("ERR: JSON parse failed");
+        Serial.print(F("ERR: Deserialization failed, "));
+        Serial.println(err.f_str());
         return;
     }
 
-    if (!request["sp_number"].is<uint16_t>()) {
-        Serial.println("ERR: Incorrect sp_number");
+    if (!request["device_uuid"].is<String>()) {
+        Serial.println(F("ERR: `device_uuid` missing"));
         return;
     }
 
-    String cmd = request["command"];
-    uint16_t spn = request["sp_number"];
+    if (!request["command"].is<String>()) {
+        Serial.println(F("ERR: `command` missing"));
+        return;
+    }
 
-    char hash[16];
-    strlcpy(hash, request["hash"] | "", sizeof(hash));
+    if (!request["iv_char_uuid"].is<String>()) {
+        Serial.println(F("ERR: `iv_char_uuid` missing"));
+        return;
+    }
 
     const auto &config = getConfig();
-
-    if (topic == "/device/commands" &&
-        config["sp_number"].as<uint16_t>() == request["sp_number"] &&
-        cmd == "start") {
-        Serial.println("Start command received");
+    const String r_device_uuid = request["device_uuid"].as<String>();
+    const String r_iv_char_uuid = request["iv_char_uuid"].as<String>();
+    const String r_command = request["command"].as<String>();
+    /*Serial.println(F("REQHDRBEGIN:"));*/
+    /*Serial.print(F("  REQBOOL: "));*/
+    /*Serial.println(topic == F("/device/command") &&*/
+    /*               config["device_uuid"].as<String>() == r_device_uuid &&*/
+    /*               r_command == F("exec_iv"));*/
+    /*Serial.print(F("  TOPIC: "));*/
+    /*Serial.println(topic);*/
+    /*Serial.print(F("  RUUID: "));*/
+    /*Serial.println(r_device_uuid);*/
+    /*Serial.print(F("  UUID: "));*/
+    /*Serial.println(config["device_uuid"].as<String>());*/
+    /*Serial.print(F("  IV UUID: "));*/
+    /*Serial.println(r_iv_char_uuid);*/
+    /*Serial.print(F("  CMD: "));*/
+    /*Serial.println(r_command);*/
+    /*Serial.println(F("REQHDREND"));*/
+    if (topic == F("/device/command") &&
+        config["device_uuid"].as<String>() == r_device_uuid &&
+        r_command == F("exec_iv")) {
+        Serial.println(F("INF: Command `exec_iv` executing"));
 
         digitalWrite(RELAY_PIN, HIGH);
 
@@ -497,10 +502,10 @@ void CommandHandler(String &topic, String &payload) {
             command_pack res;
 
             res = get_out_pack(true, i);
-            pub(res, spn, hash);
+            pub(res, r_iv_char_uuid);
 
             res = get_out_pack(false, i);
-            pub(res, spn, hash);
+            pub(res, r_iv_char_uuid);
         }
 
         OCR2B = 0;
@@ -542,4 +547,19 @@ command_pack get_out_pack(bool dy, uint16_t step) {
     float V = voltageDivider * Vo;
 
     return command_pack{A, V};
+}
+
+void pub(command_pack package, const String &iv_char_uuid) {
+    JsonDocument resultJson;
+
+    resultJson["device_uuid"] = getConfig()["device_uuid"].as<String>();
+    resultJson["iv_char_uuid"] = iv_char_uuid;
+    resultJson["current"] = package.I;
+    resultJson["voltage"] = package.V;
+
+    String output;
+    serializeJson(resultJson, output);
+    Serial.println(output);
+
+    client.publish(F("/uni/iv"), output.c_str());
 }
