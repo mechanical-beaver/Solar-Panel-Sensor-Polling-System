@@ -13,5 +13,6 @@
     "dhcp_timeout": 5000,
     "dhcp_response_timeout": 5000,
     "delta_time": 5000,
-    "sp_number": 0
+    "device_uuid": "346C6321-2C8E-4663-9B30-55A2E05117C1"
+    "sp_number": 0, # TODO: Delete this
 }
