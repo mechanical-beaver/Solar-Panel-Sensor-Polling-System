@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 30 Aug 2025 14:07:44
+ * Last Update: 02 Sep 2025 13:14:34
  *
  * Description: <EMPTY>
  */
@@ -82,7 +82,7 @@ float OPT4003Q1::getALS() {
     rl.raw = readx(OPT4003Q1_REGISTER_CH0_RESULT_LOW);
 
     uint32_t m = ((uint32_t)rh.msb << 8) | rl.lsb;
-    uint32_t r = m * (1UL << rh.e);
+    uint32_t r = m << rh.e;
 
     if (_enableCrc && !verifyCrc(m, rh.e, rl.counter, rl.crc)) {
         _errno = OPT4003Q1_ERROR_CRC_FAILED;
@@ -105,10 +105,11 @@ double OPT4003Q1::getIR() {
     rl.raw = readx(OPT4003Q1_REGISTER_CH1_RESULT_LOW);
 
     uint32_t m = ((uint32_t)rh.msb << 8) | rl.lsb;
-    uint32_t r = m * (1UL << rh.e);
+    uint32_t r = m << rh.e;
 
     if (_enableCrc && !verifyCrc(m, rh.e, rl.counter, rl.crc)) {
         _errno = OPT4003Q1_ERROR_CRC_FAILED;
+        return 0.0;
     }
 
     return (double)r * 409e-12;
