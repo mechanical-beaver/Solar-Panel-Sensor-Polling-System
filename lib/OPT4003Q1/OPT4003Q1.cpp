@@ -2,7 +2,7 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.cpp
  * Created: 01 Jul 2025 07:03:12
- * Last Update: 02 Sep 2025 13:14:34
+ * Last Update: 03 Sep 2025 22:15:52
  *
  * Description: <EMPTY>
  */
@@ -90,7 +90,7 @@ float OPT4003Q1::getALS() {
     }
 
     // TODO: Check this, 35903.21000000001 is limit
-    return (double)r * 535e-6;
+    return (float)r * 535e-6;
 }
 
 double OPT4003Q1::getIR() {
@@ -137,9 +137,6 @@ uint16_t OPT4003Q1::readx(uint8_t r) {
 }
 
 bool OPT4003Q1::writex(uint8_t r, uint16_t v) {
-#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
-    v = __builtin_bswap16(v);
-#endif
     uint8_t b[] = {r, (uint8_t)(v >> 8), (uint8_t)(v & 0xFF)};
     return _i2c->write(b, sizeof(b));
 }
