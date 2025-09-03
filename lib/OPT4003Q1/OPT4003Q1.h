@@ -2,9 +2,35 @@
  * Author: @github.com/annadostoevskaya
  * Filename: OPT4003Q1.h
  * Created: 01 Jul 2025 07:03:10
- * Last Update: 03 Sep 2025 21:56:19
+ * Last Update: 03 Sep 2025 22:28:15
  *
- * Description: <EMPTY>
+ * Description:
+ *   This is an Arduino library for the Texas Instruments OPT4003-Q1 ambient
+ *   light and infrared sensor. The library provides basic initialization,
+ *   configuration, and data reading (lux and IR) functions over I2C.
+ *
+ *   Warning:
+ *   This library is unstable and uses C++ bitfields for hardware register
+ *   mapping, which is undefined behavior (UB) according to the C++ standard.
+ *   Bitfield layout and ordering may differ between compilers and
+ *   architectures, which can cause incorrect values.
+ *
+ *   Use at your own risk ("as is").
+ *
+ *   Notes:
+ *   OPT4003Q1::begin() initializes I2C communication and validates the device
+ *   ID.
+ *
+ *   enable() and disable() write to the CONFIG_A register (0x0A). The current
+ *   implementation packs configuration values into a union OPT4003Q1_Config
+ *   with bitfields, which may not match the actual hardware register layout.
+ *
+ *   getALS() and getIR() read measurement results, reconstruct the mantissa (m)
+ *   and exponent (e), and convert raw values into physical units (lux and
+ *   watts/cm^2). CRC verification is supported but optional.
+ *
+ *   Endianness handling (__builtin_bswap16) is implemented for readx()/writex()
+ *   to ensure correct byte order across platforms.
  */
 
 #ifndef _OPT4003Q1_H_
@@ -251,7 +277,7 @@ public:
     void enable(OPT4003Q1_Config cfg = {
                     {OPT4003Q1_FAULT_COUNT_0, OPT4003Q1_ACTIVE_LOW,
                      OPT4003Q1_LATCHED_MODE, OPT4003Q1_FORCED_ONESHOT_MODE,
-                     OPT4003Q1_CONVERSION_TIME_7, OPT4003Q1_RANGE_AUTO,
+                     OPT4003Q1_CONVERSION_TIME_8, OPT4003Q1_RANGE_AUTO,
                      OPT4003Q1_QWAKE_ENABLE}});
 
     float getALS();
